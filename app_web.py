@@ -13,7 +13,7 @@ st.set_page_config(
 
 JSON_FILE = "cellules.json"
 CODE_SECRET_FINANCE = "TOUBA"
-IMAGE_FOND_PATH = "bg_xassida.jpg"
+IMAGE_FOND_PATH = "AhmaduBamba.jpg"
 
 CELLULES_PAR_DEFAUT = ["Section Dakar", "Section Saint-Louis", "Section Ngoundiane", "Section Thiès", "Section Bambey"]
 COMMISSIONS_LISTE = ["Commission Administrative", "Commission Organisation / Zikrulah", "Commission Culturelle", "Commission Finance"]
