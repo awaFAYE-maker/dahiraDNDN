@@ -44,7 +44,7 @@ if "donnees" not in st.session_state:
 if "finance_deverrouillee" not in st.session_state:
     st.session_state.finance_deverrouillee = False
 
-# --- IMAGE DE FOND ---
+# --- IMAGE DE FOND ET STYLE DE LISIBILITÉ ---
 def ajouter_image_fond(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as image_file:
@@ -57,6 +57,21 @@ def ajouter_image_fond(image_path):
             background-size: cover;
         }}
         .stApp > header {{ background-color: transparent; }}
+        
+        /* Textes, titres et labels en blanc avec ombre portée */
+        h1, h2, h3, h4, h5, h6, p, label, .stMarkdown, div[data-testid="stMetricValue"], div[data-testid="stMetricLabel"] {{
+            color: #FFFFFF !important;
+            text-shadow: 2px 2px 4px #000000, -1px -1px 3px #000000 !important;
+            font-weight: bold !important;
+        }}
+        
+        /* Arrière-plan semi-transparent pour les formulaires et blocs d'information */
+        div[data-testid="stForm"], div[data-testid="stExpander"], div[data-testid="stMetric"] {{
+            background-color: rgba(0, 0, 0, 0.65) !important;
+            padding: 15px !important;
+            border-radius: 10px !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }}
         </style>
         """
         st.markdown(css, unsafe_allow_html=True)
@@ -139,7 +154,6 @@ if menu == "🏠 Accueil":
 elif menu == "👥 Membres":
     st.header(f"Registre des Membres — {cellule_selected}")
 
-    # Formulaire d'ajout
     with st.expander("➕ Inscrire un nouveau membre dans cette cellule"):
         with st.form("form_membre"):
             nom = st.text_input("Nom et Prénom")
@@ -156,7 +170,6 @@ elif menu == "👥 Membres":
     if membres:
         st.dataframe(membres, use_container_width=True)
 
-        # Formulaire de suppression
         with st.expander("🗑️ Supprimer un membre du registre"):
             options_membres = [f"{i} - {m['nom']} ({m.get('tel', 'Pas de tél')})" for i, m in enumerate(membres)]
             membre_a_suppr = st.selectbox("Sélectionner le membre à retirer :", options_membres)
