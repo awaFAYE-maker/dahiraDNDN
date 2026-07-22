@@ -1,0 +1,142 @@
+{
+  "Section Dakar": {
+    "Commission Administrative": [
+      {
+        "nom": "Cherif Gning",
+        "tel": "76 027 59 36"
+      },
+      {
+        "nom": "Aliou Sène",
+        "tel": "75 529 16 78"
+      },
+      {
+        "nom": "Daouda Ngom",
+        "tel": "78 221 45 69"
+      },
+      {
+        "nom": "Adama Sène",
+        "tel": "78 333 71 00"
+      },
+      {
+        "nom": "Saliou Faye",
+        "tel": "70 521 12 96"
+      },
+      {
+        "nom": "Mamadou Sène",
+        "tel": "76 139 51 75"
+      },
+      {
+        "nom": "Mouhamed Sonko",
+        "tel": "77 077 19 44"
+      },
+      {
+        "nom": "Coumba Ngom",
+        "tel": "76 596 44 78"
+      },
+      {
+        "nom": "Mary Faye",
+        "tel": "76 339 49 58"
+      }
+    ],
+    "Commission Organisation / Zikrulah": [
+      {
+        "nom": "Saliou Tine",
+        "tel": "77 902 67 91"
+      },
+      {
+        "nom": "Assane Faye",
+        "tel": "70 559 16 56"
+      },
+      {
+        "nom": "Moussa Gning",
+        "tel": "77 084 19 54"
+      },
+      {
+        "nom": "Awa Ngom",
+        "tel": "77 056 49 00"
+      },
+      {
+        "nom": "Mame Diarra Kandji",
+        "tel": "77 691 68 66"
+      },
+      {
+        "nom": "Moussa Ngom",
+        "tel": "78 311 68 38"
+      },
+      {
+        "nom": "Elimane Tine",
+        "tel": "76 368 86 62"
+      },
+      {
+        "nom": "Mouhamed Faye",
+        "tel": "70 508 17 65"
+      },
+      {
+        "nom": "Gana Tine",
+        "tel": "70 679 60 24"
+      }
+    ],
+    "Commission Culturelle": [
+      {
+        "nom": "Ousseynou Gning",
+        "tel": "70 003 81 03"
+      },
+      {
+        "nom": "Saliou Gning",
+        "tel": "76 122 97 80"
+      },
+      {
+        "nom": "Ibrahima Faye",
+        "tel": "78 562 92 26"
+      },
+      {
+        "nom": "Awa Faye",
+        "tel": "76 420 14 53"
+      },
+      {
+        "nom": "Bineta Gning",
+        "tel": "76 453 49 86"
+      },
+      {
+        "nom": "Niania Gning",
+        "tel": "76 584 93 91"
+      }
+    ],
+    "Commission Finance": [],
+    "Membres Simples": [],
+    "Cotisations": [
+      {
+        "membre": "Aliou Sène",
+        "mois": "Juillet",
+        "montant": 500.0,
+        "date": "21/07/2026 à 20:37"
+      },
+      {
+        "membre": "Coumba Ngom",
+        "mois": "Juillet",
+        "montant": 500.0,
+        "date": "21/07/2026 à 23:28"
+      },
+      {
+        "membre": "Awa Ngom",
+        "mois": "Juillet",
+        "montant": 500.0,
+        "date": "22/07/2026 à 14:46"
+      }
+    ]
+  },
+  "Section Thiès": {
+    "Commission Administrative": [],
+    "Commission Organisation / Zikrulah": [],
+    "Commission Culturelle": [],
+    "Commission Finance": [],
+    "Membres Simples": [],
+    "Cotisations": []
+  },
+  "Section Bambey": {
+    "Commission Administrative": [],
+    "Commission Organisation / Zikrulah": [],
+    "Commission Culturelle": [],
+    "Commission Finance": []
+  }
+}
