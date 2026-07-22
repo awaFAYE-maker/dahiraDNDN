@@ -13,14 +13,13 @@ st.set_page_config(
 
 JSON_FILE = "cellules.json"
 CODE_SECRET_FINANCE = "TOUBA"
-IMAGE_FOND_PATH = "bg_xassida.png"  # Mets le nom exact de ton image de fond
+IMAGE_FOND_PATH = "bg_xassida.jpg"
 
-MOIS_ANNEE = [
-    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-]
+CELLULES_PAR_DEFAUT = ["Section Dakar", "Section Saint-Louis", "Section Ngoundiane", "Section Thiès", "Section Bambey"]
+COMMISSIONS_LISTE = ["Commission Administrative", "Commission Organisation / Zikrulah", "Commission Culturelle", "Commission Finance"]
+MOIS_ANNEE = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
 
-# --- CHARGEMENT / SAUVEGARDE DES DONNÉES ---
+# --- CHARGEMENT / SAUVEGARDE ---
 def charger_donnees():
     if os.path.exists(JSON_FILE):
         try:
@@ -28,13 +27,12 @@ def charger_donnees():
                 return json.load(f)
         except Exception:
             pass
-    return {
-        "Dakar": {
-            "Membres Simples": [], "Commission Administrative": [],
-            "Commission Organisation / Zikrulah": [], "Commission Culturelle": [],
-            "Commission Finance": [], "Cotisations": []
-        }
-    }
+    structure = {}
+    for cell in CELLULES_PAR_DEFAUT:
+        structure[cell] = {"Membres Simples": [], "Cotisations": []}
+        for comm in COMMISSIONS_LISTE:
+            structure[cell][comm] = []
+    return structure
 
 def sauvegarder_donnees(donnees):
     with open(JSON_FILE, "w", encoding="utf-8") as f:
@@ -67,17 +65,31 @@ ajouter_image_fond(IMAGE_FOND_PATH)
 
 # --- ENTÊTE ---
 st.title("✨ DAHIRA NOUROU DARAYNI")
-st.caption("Plateforme web accessible sur Téléphone & Ordinateur")
+st.caption("Plateforme web globale — Gestion multi-cellules")
 
-# --- BARRE DU HAUT / CELLULE & SÉCURITÉ ---
+donnees = st.session_state.donnees
+
+# --- SÉLECTION & CRÉATION DE CELLULE ---
 col_cell, col_secu = st.columns([2, 1])
 
 with col_cell:
-    cellules = list(st.session_state.donnees.keys())
+    cellules = list(donnees.keys())
     cellule_selected = st.selectbox("📍 Sélectionner la Cellule :", cellules)
+    
+    with st.expander("+ Ajouter une nouvelle cellule"):
+        nouvelle_cellule = st.text_input("Nom de la nouvelle cellule (ex: Section Mbour)")
+        if st.button("Créer la cellule") and nouvelle_cellule:
+            nom_clean = f"Section {nouvelle_cellule.replace('Section', '').strip()}"
+            if nom_clean not in donnees:
+                donnees[nom_clean] = {"Membres Simples": [], "Cotisations": []}
+                for comm in COMMISSIONS_LISTE:
+                    donnees[nom_clean][comm] = []
+                sauvegarder_donnees(donnees)
+                st.success(f"Cellule {nom_clean} créée !")
+                st.rerun()
 
 with col_secu:
-    st.write("**Espace Sécurité**")
+    st.write("**Espace Sécurité (Finance)**")
     if not st.session_state.finance_deverrouillee:
         pwd = st.text_input("Code Finance :", type="password", key="pwd_input")
         if st.button("🔓 Déverrouiller Finance"):
@@ -92,15 +104,14 @@ with col_secu:
 
 st.divider()
 
-# --- NAVIGATION DE L'APPLICATION ---
-menu = st.sidebar.radio("Navigation", ["🏠 Accueil", "👥 Membres", "📋 Commissions", "💳 Cotisations"])
-
-donnees = st.session_state.donnees
 cell_data = donnees.get(cellule_selected, {})
+
+# --- NAVIGATION ---
+menu = st.sidebar.radio("Navigation", ["🏠 Accueil", "👥 Membres", "📋 Commissions", "💳 Cotisations"])
 
 # --- PAGE ACCUEIL ---
 if menu == "🏠 Accueil":
-    st.header(f"Tableau de Bord — Cellule {cellule_selected}")
+    st.header(f"Tableau de Bord — {cellule_selected}")
 
     tot_membres = len(cell_data.get("Membres Simples", []))
     for k, v in cell_data.items():
@@ -109,7 +120,7 @@ if menu == "🏠 Accueil":
 
     col1, col2, col3 = st.columns(3)
     col1.metric("👥 Total Membres", tot_membres)
-    col2.metric("📋 Commissions Actives", len([k for k in cell_data.keys() if k not in ["Membres Simples", "Cotisations"]]))
+    col2.metric("📋 Commissions", len([k for k in cell_data.keys() if k not in ["Membres Simples", "Cotisations"]]))
 
     if st.session_state.finance_deverrouillee:
         somme = sum(c.get("montant", 0) for c in cell_data.get("Cotisations", []))
@@ -117,18 +128,19 @@ if menu == "🏠 Accueil":
     else:
         col3.metric("💳 Total Cotisations", "🔒 Verrouillé")
 
-    st.subheader("Dernières Inscriptions")
+    st.subheader("Derniers Membres Inscrits")
     membres_recents = cell_data.get("Membres Simples", [])[-5:]
     if membres_recents:
         st.table(membres_recents)
     else:
-        st.info("Aucun membre inscrit dans cette cellule.")
+        st.info("Aucun membre enregistré dans cette cellule.")
 
 # --- PAGE MEMBRES ---
 elif menu == "👥 Membres":
     st.header(f"Registre des Membres — {cellule_selected}")
 
-    with st.expander("+ Inscrire un nouveau membre"):
+    # Formulaire d'ajout
+    with st.expander("➕ Inscrire un nouveau membre dans cette cellule"):
         with st.form("form_membre"):
             nom = st.text_input("Nom et Prénom")
             tel = st.text_input("Téléphone")
@@ -143,8 +155,21 @@ elif menu == "👥 Membres":
     membres = cell_data.get("Membres Simples", [])
     if membres:
         st.dataframe(membres, use_container_width=True)
+
+        # Formulaire de suppression
+        with st.expander("🗑️ Supprimer un membre du registre"):
+            options_membres = [f"{i} - {m['nom']} ({m.get('tel', 'Pas de tél')})" for i, m in enumerate(membres)]
+            membre_a_suppr = st.selectbox("Sélectionner le membre à retirer :", options_membres)
+            
+            if st.button("❌ Supprimer définitivement ce membre", type="primary"):
+                idx = int(membre_a_suppr.split(" - ")[0])
+                nom_retire = membres[idx]['nom']
+                membres.pop(idx)
+                sauvegarder_donnees(donnees)
+                st.success(f"Le membre {nom_retire} a été supprimé !")
+                st.rerun()
     else:
-        st.info("Aucun membre dans le registre.")
+        st.info("Aucun membre dans le registre de cette cellule.")
 
 # --- PAGE COMMISSIONS ---
 elif menu == "📋 Commissions":
@@ -156,7 +181,7 @@ elif menu == "📋 Commissions":
     if "Finance" in comm_selected and not st.session_state.finance_deverrouillee:
         st.warning("🔒 L'accès à la Commission Finance nécessite le mot de passe.")
     else:
-        with st.expander(f"+ Affecter un membre à : {comm_selected}"):
+        with st.expander(f"➕ Affecter un membre à : {comm_selected}"):
             with st.form("form_comm"):
                 nom = st.text_input("Nom et Prénom")
                 tel = st.text_input("Téléphone")
@@ -168,11 +193,25 @@ elif menu == "📋 Commissions":
                     st.success("Affectation réussie !")
                     st.rerun()
 
-        st.table(cell_data.get(comm_selected, []))
+        membres_comm = cell_data.get(comm_selected, [])
+        if membres_comm:
+            st.table(membres_comm)
+
+            with st.expander(f"🗑️ Retirer un membre de : {comm_selected}"):
+                opts_comm = [f"{i} - {m['nom']}" for i, m in enumerate(membres_comm)]
+                m_comm_suppr = st.selectbox("Sélectionner le membre à retirer de la commission :", opts_comm)
+                if st.button("❌ Retirer de la commission"):
+                    idx_c = int(m_comm_suppr.split(" - ")[0])
+                    membres_comm.pop(idx_c)
+                    sauvegarder_donnees(donnees)
+                    st.success("Membre retiré de la commission !")
+                    st.rerun()
+        else:
+            st.info("Aucun membre affecté à cette commission.")
 
 # --- PAGE COTISATIONS ---
 elif menu == "💳 Cotisations":
-    st.header(f"Cotisations — Cellule {cellule_selected}")
+    st.header(f"Cotisations — {cellule_selected}")
 
     if not st.session_state.finance_deverrouillee:
         st.warning("🔒 Veuillez entrer le code finance en haut pour accéder aux cotisations.")
@@ -201,5 +240,16 @@ elif menu == "💳 Cotisations":
         cotisations = cell_data.get("Cotisations", [])
         if cotisations:
             st.dataframe(list(reversed(cotisations)), use_container_width=True)
+            
+            with st.expander("🗑️ Supprimer une cotisation"):
+                options_cotis = [f"{i} - {c['membre']} | {c['mois']} | {c['montant']} FCFA | ({c.get('date', '')})" for i, c in enumerate(cotisations)]
+                cotis_a_supprimer = st.selectbox("Sélectionner la cotisation à effacer :", options_cotis)
+                
+                if st.button("❌ Effacer cette cotisation", type="primary"):
+                    index_to_remove = int(cotis_a_supprimer.split(" - ")[0])
+                    cotisations.pop(index_to_remove)
+                    sauvegarder_donnees(donnees)
+                    st.success("Cotisation effacée avec succès !")
+                    st.rerun()
         else:
             st.info("Aucune cotisation enregistrée.")
