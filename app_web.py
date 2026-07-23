@@ -133,6 +133,7 @@ st.title("✨ DAHIRA NOUROU DARAYNI")
 st.caption("Plateforme web globale — Gestion multi-cellules")
 
 donnees = st.session_state.donnees
+role = st.session_state.role_actif
 
 # --- ESPACE DE CONNEXION ET SÉLECTION DE CELLULE ---
 col_cell, col_secu = st.columns([2, 1])
@@ -141,15 +142,36 @@ with col_cell:
     cellules = list(donnees.keys()) if donnees else CELLULES_PAR_DEFAUT
     cellule_selected = st.selectbox("📍 Sélectionner votre Cellule :", cellules)
 
+    # --- AJOUT DE CELLULE (SUPER ADMIN SEULEMENT) ---
+    if role == "SUPER_ADMIN":
+        with st.expander("➕ Ajouter une nouvelle cellule (SUPER ADMIN)"):
+            with st.form("form_nouvelle_cellule"):
+                nom_nouvelle_cell = st.text_input("Nom de la cellule (ex: Section Louga) :")
+                btn_creer_cell = st.form_submit_button("Créer la cellule")
+
+                if btn_creer_cell and nom_nouvelle_cell:
+                    nom_clean = nom_nouvelle_cell.strip()
+                    if nom_clean in donnees:
+                        st.error("⚠️ Cette cellule existe déjà !")
+                    else:
+                        # Initialisation de la structure pour la nouvelle cellule
+                        donnees[nom_clean] = {"Membres Simples": [], "Cotisations": []}
+                        for comm in COMMISSIONS_LISTE:
+                            donnees[nom_clean][comm] = []
+                            
+                        sauvegarder_donnees(donnees)
+                        st.success(f"✅ La cellule '{nom_clean}' a été créée avec succès !")
+                        st.rerun()
+
 with col_secu:
     st.write("**🔒 Authentification**")
-    if st.session_state.role_actif is None:
+    if role is None:
         pwd = st.text_input("Entrez votre code secret :", type="password", key="pwd_login")
         if st.button("🔓 S'authentifier"):
             role_trouve = None
-            for role, code in CODES_SECRETS.items():
+            for r, code in CODES_SECRETS.items():
                 if pwd == code:
-                    role_trouve = role
+                    role_trouve = r
                     break
             
             if role_trouve:
@@ -167,7 +189,6 @@ with col_secu:
 st.divider()
 
 cell_data = donnees.get(cellule_selected, {})
-role = st.session_state.role_actif
 
 # --- PERMISSIONS ---
 def peut_gerer_membres_global():
