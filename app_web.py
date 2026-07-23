@@ -58,23 +58,83 @@ if "donnees" not in st.session_state:
 if "role_actif" not in st.session_state:
     st.session_state.role_actif = None
 
-# --- IMAGE DE FOND ---
+# --- IMAGE DE FOND ET STYLE CSS (TEXTES EN BLANC & LISIBILITÉ) ---
+bg_css = ""
 if os.path.exists(IMAGE_FOND_PATH):
     try:
         with open(IMAGE_FOND_PATH, "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read()).decode()
-        css = f"""
-        <style>
-        .stApp {{
-            background-image: url("data:image/png;base64,{encoded_string}");
-            background-attachment: fixed;
-            background-size: cover;
-        }}
-        </style>
-        """
-        st.markdown(css, unsafe_allow_html=True)
+            bg_css = f'background-image: url("data:image/png;base64,{encoded_string}");'
     except Exception:
         pass
+
+st.markdown(
+    f"""
+    <style>
+    /* Image de fond globale */
+    .stApp {{
+        {bg_css}
+        background-attachment: fixed;
+        background-size: cover;
+        background-position: center;
+    }}
+
+    /* Voile sombre transparent pour améliorer le contraste */
+    .stApp::before {{
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 0;
+    }}
+
+    /* Forcer la couleur blanche sur tous les textes */
+    h1, h2, h3, h4, h5, h6, p, label, span, div, li {{
+        color: #FFFFFF !important;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9) !important;
+    }}
+
+    /* Style spécifique pour les valeurs des métriques */
+    [data-testid="stMetricValue"] {{
+        color: #FFFFFF !important;
+        font-weight: bold !important;
+        text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.9) !important;
+    }}
+
+    /* Style spécifique pour les libellés des métriques */
+    [data-testid="stMetricLabel"] {{
+        color: #F0F0F0 !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9) !important;
+    }}
+
+    /* Fond semi-transparent pour la barre latérale */
+    [data-testid="stSidebar"] {{
+        background-color: rgba(15, 23, 42, 0.85) !important;
+        backdrop-filter: blur(8px);
+    }}
+
+    /* Boîtes d'alerte et messages d'information */
+    .stAlert {{
+        background-color: rgba(0, 0, 0, 0.65) !important;
+        color: #FFFFFF !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        border-radius: 8px !important;
+    }}
+
+    /* Champs de saisie (inputs) pour garder le texte lisible pendant la frappe */
+    .stTextInput input, .stSelectbox div {{
+        color: #000000 !important;
+        text-shadow: none !important;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # --- ENTÊTE ---
 st.title("✨ DAHIRA NOUROU DARAYNI")
