@@ -16,11 +16,11 @@ IMAGE_FOND_PATH = "AhmaduBamba.jpg"
 
 # --- 🔑 DICTIONNAIRE DES CODES SECRETS ---
 CODES_SECRETS = {
-    "SUPER_ADMIN": "TOUBA_ADMIN",
-    "Commission Administrative": "ADMIN_2026",
-    "Commission Organisation / Zikrulah": "ORGA_2026",
-    "Commission Culturelle": "CULTURE_2026",
-    "Commission Finance": "FINANCE_2026"
+    "SUPER_ADMIN": "JARAJEUF BOROM  TOUBA",
+    "Commission Administrative": "SINDINDI",
+    "Commission Organisation / Zikrulah": "JALIBATOU",
+    "Commission Culturelle": "JAZBOU",
+    "Commission Finance": "MAWAHIBOU"
 }
 
 CELLULES_PAR_DEFAUT = ["Section Dakar", "Section Saint-Louis", "Section Ngoundiane", "Section Thiès", "Section Bambey"]
