@@ -17,17 +17,17 @@ IMAGE_FOND_PATH = "AhmaduBamba.jpg"
 # --- 🔑 DICTIONNAIRE DES CODES SECRETS ---
 CODES_SECRETS = {
     "SUPER_ADMIN": "TOUBA_ADMIN",
-    "Commission Administrative": "JARAJEUF BOROM TOUBA",
-    "Commission Organisation / Zikrulah": "JALIBATOU",
-    "Commission Culturelle": "JAZBOU",
-    "Commission Finance": "MAWAHIBOU"
+    "Commission Administrative": "ADMIN_2026",
+    "Commission Organisation / Zikrulah": "ORGA_2026",
+    "Commission Culturelle": "CULTURE_2026",
+    "Commission Finance": "FINANCE_2026"
 }
 
 CELLULES_PAR_DEFAUT = ["Section Dakar", "Section Saint-Louis", "Section Ngoundiane", "Section Thiès", "Section Bambey"]
 COMMISSIONS_LISTE = list(CODES_SECRETS.keys())[1:]
 MOIS_ANNEE = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
 
-# --- CHARGEMENT ultra-sécurisé ---
+# --- CHARGEMENT DES DONNÉES ---
 def charger_donnees():
     if os.path.exists(JSON_FILE):
         try:
@@ -58,7 +58,7 @@ if "donnees" not in st.session_state:
 if "role_actif" not in st.session_state:
     st.session_state.role_actif = None
 
-# --- IMAGE DE FOND ET STYLE CSS (TEXTES EN BLANC & LISIBILITÉ) ---
+# --- IMAGE DE FOND ET STYLE CSS ---
 bg_css = ""
 if os.path.exists(IMAGE_FOND_PATH):
     try:
@@ -71,7 +71,6 @@ if os.path.exists(IMAGE_FOND_PATH):
 st.markdown(
     f"""
     <style>
-    /* Image de fond globale */
     .stApp {{
         {bg_css}
         background-attachment: fixed;
@@ -79,7 +78,6 @@ st.markdown(
         background-position: center;
     }}
 
-    /* Voile sombre transparent pour améliorer le contraste */
     .stApp::before {{
         content: "";
         position: absolute;
@@ -87,24 +85,21 @@ st.markdown(
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.55);
         z-index: 0;
     }}
 
-    /* Forcer la couleur blanche sur tous les textes */
     h1, h2, h3, h4, h5, h6, p, label, span, div, li {{
         color: #FFFFFF !important;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9) !important;
     }}
 
-    /* Style spécifique pour les valeurs des métriques */
     [data-testid="stMetricValue"] {{
         color: #FFFFFF !important;
         font-weight: bold !important;
         text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.9) !important;
     }}
 
-    /* Style spécifique pour les libellés des métriques */
     [data-testid="stMetricLabel"] {{
         color: #F0F0F0 !important;
         font-size: 1.1rem !important;
@@ -112,13 +107,11 @@ st.markdown(
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9) !important;
     }}
 
-    /* Fond semi-transparent pour la barre latérale */
     [data-testid="stSidebar"] {{
         background-color: rgba(15, 23, 42, 0.85) !important;
         backdrop-filter: blur(8px);
     }}
 
-    /* Boîtes d'alerte et messages d'information */
     .stAlert {{
         background-color: rgba(0, 0, 0, 0.65) !important;
         color: #FFFFFF !important;
@@ -126,8 +119,7 @@ st.markdown(
         border-radius: 8px !important;
     }}
 
-    /* Champs de saisie (inputs) pour garder le texte lisible pendant la frappe */
-    .stTextInput input, .stSelectbox div {{
+    .stTextInput input, .stSelectbox div, .stNumberInput input {{
         color: #000000 !important;
         text-shadow: none !important;
     }}
@@ -193,15 +185,11 @@ menu = st.sidebar.radio("Navigation", ["🏠 Accueil", "👥 Membres", "📋 Com
 if menu == "🏠 Accueil":
     st.header(f"Tableau de Bord — {cellule_selected}")
 
-    tot_membres = 0
-    if isinstance(cell_data, dict):
-        for k, v in cell_data.items():
-            if isinstance(v, list):
-                tot_membres += len(v)
+    tot_membres = len(cell_data.get("Membres Simples", [])) if isinstance(cell_data, dict) else 0
 
     col1, col2, col3 = st.columns(3)
     col1.metric("👥 Total Membres", tot_membres)
-    col2.metric("📋 Commissions", len([k for k in cell_data.keys() if k not in ["Membres Simples", "Cotisations"]]) if isinstance(cell_data, dict) else 0)
+    col2.metric("📋 Commissions", len(COMMISSIONS_LISTE))
 
     cotis = cell_data.get("Cotisations", []) if isinstance(cell_data, dict) else []
     somme = sum(c.get("montant", 0) for c in cotis if isinstance(c, dict))
@@ -218,20 +206,38 @@ if menu == "🏠 Accueil":
 elif menu == "👥 Membres":
     st.header(f"Registre des Membres — {cellule_selected}")
 
-    peut_gerer_membres = a_permission(besoin_admin_general=True) or a_permission("Commission Administrative")
+    peut_gerer_membres = a_permission(besoin_admin_general=True)
 
     if peut_gerer_membres:
-        with st.expander("➕ Inscrire un nouveau membre dans cette cellule"):
-            with st.form("form_membre"):
-                nom = st.text_input("Nom et Prénom")
-                tel = st.text_input("Téléphone")
-                btn_add = st.form_submit_button("Enregistrer le membre")
+        col_add, col_del = st.columns(2)
 
-                if btn_add and nom:
-                    cell_data.setdefault("Membres Simples", []).append({"nom": nom.strip(), "tel": tel.strip()})
-                    sauvegarder_donnees(donnees)
-                    st.success(f"Membre {nom} ajouté !")
-                    st.rerun()
+        with col_add:
+            with st.expander("➕ Inscrire un nouveau membre"):
+                with st.form("form_membre"):
+                    nom = st.text_input("Nom et Prénom")
+                    tel = st.text_input("Téléphone")
+                    btn_add = st.form_submit_button("Enregistrer le membre")
+
+                    if btn_add and nom:
+                        cell_data.setdefault("Membres Simples", []).append({"nom": nom.strip(), "tel": tel.strip()})
+                        sauvegarder_donnees(donnees)
+                        st.success(f"Membre {nom} ajouté !")
+                        st.rerun()
+
+        with col_del:
+            with st.expander("🗑️ Supprimer un membre"):
+                membres_existants = cell_data.get("Membres Simples", [])
+                noms_membres = [m["nom"] for m in membres_existants] if membres_existants else []
+
+                if noms_membres:
+                    membre_a_supprimer = st.selectbox("Sélectionnez le membre à supprimer :", noms_membres)
+                    if st.button("Confirmer la suppression", type="primary"):
+                        cell_data["Membres Simples"] = [m for m in membres_existants if m["nom"] != membre_a_supprimer]
+                        sauvegarder_donnees(donnees)
+                        st.success(f"Membre {membre_a_supprimer} supprimé !")
+                        st.rerun()
+                else:
+                    st.info("Aucun membre à supprimer.")
 
     membres = cell_data.get("Membres Simples", []) if isinstance(cell_data, dict) else []
     if membres:
@@ -243,21 +249,85 @@ elif menu == "👥 Membres":
 elif menu == "📋 Commissions":
     st.header(f"Gestion des Commissions — {cellule_selected}")
 
-    commissions = [k for k in cell_data.keys() if k not in ["Membres Simples", "Cotisations"]] if isinstance(cell_data, dict) else []
-    comm_selected = st.selectbox("Choisir une commission :", commissions) if commissions else None
+    comm_selected = st.selectbox("Choisir une commission :", COMMISSIONS_LISTE)
+
+    peut_gerer_comm = a_permission(comm_selected) or a_permission(besoin_admin_general=True)
 
     if comm_selected:
+        cell_data.setdefault(comm_selected, [])
         membres_comm = cell_data.get(comm_selected, [])
+
+        if peut_gerer_comm:
+            col_c1, col_c2 = st.columns(2)
+
+            with col_c1:
+                with st.expander(f"➕ Ajouter un membre dans : {comm_selected}"):
+                    membres_dispos = [m for m in cell_data.get("Membres Simples", []) if m not in membres_comm]
+                    noms_dispos = [m["nom"] for m in membres_dispos]
+
+                    if noms_dispos:
+                        nom_choisi = st.selectbox("Sélectionner un membre du registre :", noms_dispos)
+                        if st.button("Ajouter à la commission"):
+                            membre_obj = next(m for m in membres_dispos if m["nom"] == nom_choisi)
+                            cell_data[comm_selected].append(membre_obj)
+                            sauvegarder_donnees(donnees)
+                            st.success(f"{nom_choisi} ajouté à {comm_selected} !")
+                            st.rerun()
+                    else:
+                        st.info("Tous les membres sont déjà affectés ou aucun membre dans la cellule.")
+
+            with col_c2:
+                with st.expander(f"🗑️ Retirer un membre de : {comm_selected}"):
+                    noms_dans_comm = [m["nom"] for m in membres_comm]
+                    if noms_dans_comm:
+                        nom_retrait = st.selectbox("Sélectionner le membre à retirer :", noms_dans_comm)
+                        if st.button("Retirer de la commission"):
+                            cell_data[comm_selected] = [m for m in membres_comm if m["nom"] != nom_retrait]
+                            sauvegarder_donnees(donnees)
+                            st.success(f"{nom_retrait} retiré de {comm_selected} !")
+                            st.rerun()
+                    else:
+                        st.info("Aucun membre dans cette commission.")
+
+        st.subheader(f"Membres affectés à : {comm_selected}")
         if membres_comm:
             st.table(membres_comm)
         else:
-            st.info("Aucun membre affecté à cette commission.")
+            st.info("Aucun membre affecté à cette commission pour l'instant.")
 
-# --- PAGE COTISATIONS ---
+# --- PAGE COTISATIONS (EXCLUSIF COMMISSION FINANCE & SUPER_ADMIN) ---
 elif menu == "💳 Cotisations":
     st.header(f"Cotisations — {cellule_selected}")
-    cotisations = cell_data.get("Cotisations", []) if isinstance(cell_data, dict) else []
-    if cotisations:
-        st.dataframe(list(reversed(cotisations)), use_container_width=True)
+
+    est_finance_ou_admin = a_permission("Commission Finance") or a_permission(besoin_admin_general=True)
+
+    if not est_finance_ou_admin:
+        st.error("🔒 Accès restreint. Seule la Commission Finance et le SUPER_ADMIN peuvent accéder aux cotisations.")
     else:
-        st.info("Aucune cotisation enregistrée.")
+        with st.expander("➕ Enregistrer une nouvelle cotisation"):
+            membres_cell = [m["nom"] for m in cell_data.get("Membres Simples", [])]
+            if membres_cell:
+                with st.form("form_cotisation"):
+                    nom_payeur = st.selectbox("Membre :", membres_cell)
+                    montant = st.number_input("Montant (FCFA) :", min_value=1000, step=500)
+                    mois = st.selectbox("Mois :", MOIS_ANNEE)
+                    btn_cotis = st.form_submit_button("Enregistrer la cotisation")
+
+                    if btn_cotis:
+                        cell_data.setdefault("Cotisations", []).append({
+                            "membre": nom_payeur,
+                            "montant": montant,
+                            "mois": mois,
+                            "date": datetime.now().strftime("%Y-%m-%d %H:%M")
+                        })
+                        sauvegarder_donnees(donnees)
+                        st.success("Cotisation enregistrée avec succès !")
+                        st.rerun()
+            else:
+                st.info("Veuillez d'abord enregistrer des membres dans cette cellule.")
+
+        cotisations = cell_data.get("Cotisations", []) if isinstance(cell_data, dict) else []
+        if cotisations:
+            st.dataframe(list(reversed(cotisations)), use_container_width=True)
+        else:
+            st.info("Aucune cotisation enregistrée.")
