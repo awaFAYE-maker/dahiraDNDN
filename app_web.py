@@ -27,14 +27,17 @@ CELLULES_PAR_DEFAUT = ["Section Dakar", "Section Saint-Louis", "Section Ngoundia
 COMMISSIONS_LISTE = list(CODES_SECRETS.keys())[1:]
 MOIS_ANNEE = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
 
-# --- CHARGEMENT / SAUVEGARDE SÉCURISÉS ---
+# --- CHARGEMENT SÉCURISÉ ---
 def charger_donnees():
     if os.path.exists(JSON_FILE):
         try:
             with open(JSON_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                if isinstance(data, dict) and len(data) > 0:
+                    return data
         except Exception:
             pass
+    
     structure = {}
     for cell in CELLULES_PAR_DEFAUT:
         structure[cell] = {"Membres Simples": [], "Cotisations": []}
@@ -43,8 +46,11 @@ def charger_donnees():
     return structure
 
 def sauvegarder_donnees(donnees):
-    with open(JSON_FILE, "w", encoding="utf-8") as f:
-        json.dump(donnees, f, ensure_ascii=False, indent=2)
+    try:
+        with open(JSON_FILE, "w", encoding="utf-8") as f:
+            json.dump(donnees, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        st.error(f"Erreur de sauvegarde : {e}")
 
 if "donnees" not in st.session_state:
     st.session_state.donnees = charger_donnees()
@@ -52,7 +58,7 @@ if "donnees" not in st.session_state:
 if "role_actif" not in st.session_state:
     st.session_state.role_actif = None
 
-# --- IMAGE DE FOND ET STYLE ---
+# --- IMAGE DE FOND ---
 def ajouter_image_fond(image_path):
     if os.path.exists(image_path):
         try:
@@ -111,7 +117,7 @@ st.caption("Plateforme web globale — Gestion multi-cellules")
 
 donnees = st.session_state.donnees
 
-# --- ESPACE DE CONNEXION SÉCURISÉ ---
+# --- ESPACE DE CONNEXION ---
 col_cell, col_secu = st.columns([2, 1])
 
 with col_cell:
