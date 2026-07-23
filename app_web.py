@@ -18,7 +18,7 @@ IMAGE_FOND_PATH = "AhmaduBamba.jpg"
 CODES_SECRETS = {
     "SUPER_ADMIN": "JARAJEUF BOROM TOUBA",
     "Commission Administrative": "SINDINDI",
-    "Commission Organisation / Zikrulah": JALIBATOU",
+    "Commission Organisation / Zikrulah": "JALIBATOU",
     "Commission Culturelle": "JAZBOU",
     "Commission Finance": "MAWAHIBOU"
 }
