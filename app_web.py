@@ -16,7 +16,7 @@ IMAGE_FOND_PATH = "AhmaduBamba.jpg"
 
 # --- 🔑 DICTIONNAIRE DES CODES SECRETS ---
 CODES_SECRETS = {
-    "SUPER_ADMIN": "JARAJEUF BOROM  TOUBA",
+    "SUPER_ADMIN": "JARAJEUF BOROM TOUBA",
     "Commission Administrative": "SINDINDI",
     "Commission Organisation / Zikrulah": "JALIBATOU",
     "Commission Culturelle": "JAZBOU",
@@ -134,12 +134,12 @@ st.caption("Plateforme web globale — Gestion multi-cellules")
 
 donnees = st.session_state.donnees
 
-# --- ESPACE DE CONNEXION ---
+# --- ESPACE DE CONNEXION ET SÉLECTION DE CELLULE ---
 col_cell, col_secu = st.columns([2, 1])
 
 with col_cell:
     cellules = list(donnees.keys()) if donnees else CELLULES_PAR_DEFAUT
-    cellule_selected = st.selectbox("📍 Sélectionner la Cellule :", cellules)
+    cellule_selected = st.selectbox("📍 Sélectionner votre Cellule :", cellules)
 
 with col_secu:
     st.write("**🔒 Authentification**")
@@ -166,17 +166,41 @@ with col_secu:
 
 st.divider()
 
+# Récupération des données EXCLUSIVES à la cellule sélectionnée
 cell_data = donnees.get(cellule_selected, {})
 role = st.session_state.role_actif
 
-def a_permission(nom_commission=None, besoin_admin_general=False):
+# --- PERMISSIONS ---
+# Seuls ADMIN et FINANCE (et SUPER_ADMIN) peuvent ajouter/supprimer des membres
+def peut_gerer_membres_global():
+    return role in ["SUPER_ADMIN", "Commission Administrative", "Commission Finance"]
+
+def a_permission(nom_commission=None):
     if role == "SUPER_ADMIN":
-        return True
-    if besoin_admin_general and role == "Commission Administrative":
         return True
     if nom_commission and role == nom_commission:
         return True
     return False
+
+def obtenir_tous_les_membres_uniques(c_data):
+    """Récupère tous les membres uniques inscrits uniquement dans la cellule sélectionnée."""
+    tous_membres = []
+    noms_vus = set()
+    
+    # 1. Membres simples
+    for m in c_data.get("Membres Simples", []):
+        if isinstance(m, dict) and m.get("nom") and m["nom"] not in noms_vus:
+            tous_membres.append(m)
+            noms_vus.add(m["nom"])
+            
+    # 2. Membres des commissions
+    for comm in COMMISSIONS_LISTE:
+        for m in c_data.get(comm, []):
+            if isinstance(m, dict) and m.get("nom") and m["nom"] not in noms_vus:
+                tous_membres.append(m)
+                noms_vus.add(m["nom"])
+                
+    return tous_membres
 
 # --- NAVIGATION ---
 menu = st.sidebar.radio("Navigation", ["🏠 Accueil", "👥 Membres", "📋 Commissions", "💳 Cotisations"])
@@ -185,43 +209,46 @@ menu = st.sidebar.radio("Navigation", ["🏠 Accueil", "👥 Membres", "📋 Com
 if menu == "🏠 Accueil":
     st.header(f"Tableau de Bord — {cellule_selected}")
 
-    tot_membres = len(cell_data.get("Membres Simples", [])) if isinstance(cell_data, dict) else 0
+    membres_uniques = obtenir_tous_les_membres_uniques(cell_data)
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("👥 Total Membres", tot_membres)
+    col1, col2 = st.columns(2)
+    col1.metric("👥 Total Membres (Cellule)", len(membres_uniques))
     col2.metric("📋 Commissions", len(COMMISSIONS_LISTE))
 
-    cotis = cell_data.get("Cotisations", []) if isinstance(cell_data, dict) else []
-    somme = sum(c.get("montant", 0) for c in cotis if isinstance(c, dict))
-    col3.metric("💳 Total Cotisations", f"{somme:,.0f} FCFA")
-
     st.subheader("Derniers Membres Inscrits")
-    membres_recents = cell_data.get("Membres Simples", [])[-5:] if isinstance(cell_data, dict) else []
+    membres_recents = membres_uniques[-5:]
     if membres_recents:
         st.table(membres_recents)
     else:
-        st.info("Aucun membre enregistré dans cette cellule.")
+        st.info(f"Aucun membre enregistré pour la {cellule_selected}.")
 
-# --- PAGE MEMBRES ---
+# --- PAGE MEMBRES (VISIBLES PAR TOUS / AJOUT & SUPP RESTREINTS À ADMIN & FINANCE) ---
 elif menu == "👥 Membres":
     st.header(f"Registre des Membres — {cellule_selected}")
 
-    peut_gerer_membres = a_permission(besoin_admin_general=True)
-
-    if peut_gerer_membres:
+    # Restauration de l'accès direct aux fonctions d'ajout/suppression pour Admin et Finance
+    if peut_gerer_membres_global():
         col_add, col_del = st.columns(2)
 
         with col_add:
             with st.expander("➕ Inscrire un nouveau membre"):
                 with st.form("form_membre"):
-                    nom = st.text_input("Nom et Prénom")
+                    nom = st.text_input("Nom et Prénom *")
                     tel = st.text_input("Téléphone")
+                    adresse = st.text_input("Adresse / Quartier")
+                    profession = st.text_input("Fonction / Profession")
                     btn_add = st.form_submit_button("Enregistrer le membre")
 
                     if btn_add and nom:
-                        cell_data.setdefault("Membres Simples", []).append({"nom": nom.strip(), "tel": tel.strip()})
+                        nouveau_membre = {
+                            "nom": nom.strip(),
+                            "tel": tel.strip() if tel else "N/A",
+                            "adresse": adresse.strip() if adresse else "N/A",
+                            "profession": profession.strip() if profession else "N/A"
+                        }
+                        cell_data.setdefault("Membres Simples", []).append(nouveau_membre)
                         sauvegarder_donnees(donnees)
-                        st.success(f"Membre {nom} ajouté !")
+                        st.success(f"Membre {nom} ajouté à la {cellule_selected} !")
                         st.rerun()
 
         with col_del:
@@ -233,17 +260,25 @@ elif menu == "👥 Membres":
                     membre_a_supprimer = st.selectbox("Sélectionnez le membre à supprimer :", noms_membres)
                     if st.button("Confirmer la suppression", type="primary"):
                         cell_data["Membres Simples"] = [m for m in membres_existants if m["nom"] != membre_a_supprimer]
+                        
+                        # Retirer également des commissions de la cellule si présent
+                        for comm in COMMISSIONS_LISTE:
+                            cell_data[comm] = [m for m in cell_data.get(comm, []) if m.get("nom") != membre_a_supprimer]
+                            
                         sauvegarder_donnees(donnees)
-                        st.success(f"Membre {membre_a_supprimer} supprimé !")
+                        st.success(f"Membre {membre_a_supprimer} supprimé de la cellule !")
                         st.rerun()
                 else:
                     st.info("Aucun membre à supprimer.")
-
-    membres = cell_data.get("Membres Simples", []) if isinstance(cell_data, dict) else []
-    if membres:
-        st.dataframe(membres, use_container_width=True)
     else:
-        st.info("Aucun membre dans le registre de cette cellule.")
+        st.info("ℹ️ Vous consultez le registre en mode lecture seule. Seules les Commissions Administrative et Finance peuvent ajouter ou supprimer des membres.")
+
+    st.subheader(f"Liste générale des membres ({cellule_selected})")
+    membres_totaux = obtenir_tous_les_membres_uniques(cell_data)
+    if membres_totaux:
+        st.dataframe(membres_totaux, use_container_width=True)
+    else:
+        st.info(f"Aucun membre enregistré dans la {cellule_selected}.")
 
 # --- PAGE COMMISSIONS ---
 elif menu == "📋 Commissions":
@@ -251,7 +286,8 @@ elif menu == "📋 Commissions":
 
     comm_selected = st.selectbox("Choisir une commission :", COMMISSIONS_LISTE)
 
-    peut_gerer_comm = a_permission(comm_selected) or a_permission(besoin_admin_general=True)
+    # Permission d'ajouter dans une commission spécifique : Admin, Finance ou membre de la commission elle-même
+    peut_gerer_comm = peut_gerer_membres_global() or a_permission(comm_selected)
 
     if comm_selected:
         cell_data.setdefault(comm_selected, [])
@@ -262,19 +298,47 @@ elif menu == "📋 Commissions":
 
             with col_c1:
                 with st.expander(f"➕ Ajouter un membre dans : {comm_selected}"):
-                    membres_dispos = [m for m in cell_data.get("Membres Simples", []) if m not in membres_comm]
-                    noms_dispos = [m["nom"] for m in membres_dispos]
+                    type_ajout = st.radio("Méthode d'ajout :", ["Sélectionner depuis le registre", "Créer un nouveau membre complet"], key="type_ajout_comm")
 
-                    if noms_dispos:
-                        nom_choisi = st.selectbox("Sélectionner un membre du registre :", noms_dispos)
-                        if st.button("Ajouter à la commission"):
-                            membre_obj = next(m for m in membres_dispos if m["nom"] == nom_choisi)
-                            cell_data[comm_selected].append(membre_obj)
-                            sauvegarder_donnees(donnees)
-                            st.success(f"{nom_choisi} ajouté à {comm_selected} !")
-                            st.rerun()
+                    if type_ajout == "Sélectionner depuis le registre":
+                        membres_dispos = [m for m in cell_data.get("Membres Simples", []) if m not in membres_comm]
+                        noms_dispos = [m["nom"] for m in membres_dispos]
+
+                        if noms_dispos:
+                            nom_choisi = st.selectbox("Sélectionner un membre :", noms_dispos)
+                            if st.button("Ajouter à la commission"):
+                                membre_obj = next(m for m in membres_dispos if m["nom"] == nom_choisi)
+                                cell_data[comm_selected].append(membre_obj)
+                                sauvegarder_donnees(donnees)
+                                st.success(f"{nom_choisi} ajouté à {comm_selected} !")
+                                st.rerun()
+                        else:
+                            st.info("Tous les membres du registre sont déjà dans cette commission ou le registre est vide.")
+                    
                     else:
-                        st.info("Tous les membres sont déjà affectés ou aucun membre dans la cellule.")
+                        with st.form("form_nouveau_membre_comm"):
+                            nouveau_nom = st.text_input("Nom et Prénom *")
+                            nouveau_tel = st.text_input("Téléphone")
+                            nouvelle_adresse = st.text_input("Adresse / Quartier")
+                            nouvelle_prof = st.text_input("Fonction / Profession")
+                            btn_creer = st.form_submit_button("Créer et ajouter à la commission")
+
+                            if btn_creer and nouveau_nom:
+                                nouveau_membre = {
+                                    "nom": nouveau_nom.strip(),
+                                    "tel": nouveau_tel.strip() if nouveau_tel else "N/A",
+                                    "adresse": nouvelle_adresse.strip() if nouvelle_adresse else "N/A",
+                                    "profession": nouvelle_prof.strip() if nouvelle_prof else "N/A"
+                                }
+                                # Ajout dans la commission
+                                cell_data[comm_selected].append(nouveau_membre)
+                                # Ajout automatique dans le registre simple s'il n'y est pas
+                                if nouveau_membre not in cell_data.get("Membres Simples", []):
+                                    cell_data.setdefault("Membres Simples", []).append(nouveau_membre)
+                                
+                                sauvegarder_donnees(donnees)
+                                st.success(f"{nouveau_nom} créé et ajouté à {comm_selected} !")
+                                st.rerun()
 
             with col_c2:
                 with st.expander(f"🗑️ Retirer un membre de : {comm_selected}"):
@@ -291,24 +355,24 @@ elif menu == "📋 Commissions":
 
         st.subheader(f"Membres affectés à : {comm_selected}")
         if membres_comm:
-            st.table(membres_comm)
+            st.dataframe(membres_comm, use_container_width=True)
         else:
             st.info("Aucun membre affecté à cette commission pour l'instant.")
 
-# --- PAGE COTISATIONS (EXCLUSIF COMMISSION FINANCE & SUPER_ADMIN) ---
+# --- PAGE COTISATIONS (ACCÈS RESTREINT : COMMISSION FINANCE & SUPER_ADMIN) ---
 elif menu == "💳 Cotisations":
     st.header(f"Cotisations — {cellule_selected}")
 
-    est_finance_ou_admin = a_permission("Commission Finance") or a_permission(besoin_admin_general=True)
+    est_finance_ou_admin = a_permission("Commission Finance") or role == "SUPER_ADMIN"
 
     if not est_finance_ou_admin:
         st.error("🔒 Accès restreint. Seule la Commission Finance et le SUPER_ADMIN peuvent accéder aux cotisations.")
     else:
         with st.expander("➕ Enregistrer une nouvelle cotisation"):
-            membres_cell = [m["nom"] for m in cell_data.get("Membres Simples", [])]
-            if membres_cell:
+            membres_totaux = [m["nom"] for m in obtenir_tous_les_membres_uniques(cell_data)]
+            if membres_totaux:
                 with st.form("form_cotisation"):
-                    nom_payeur = st.selectbox("Membre :", membres_cell)
+                    nom_payeur = st.selectbox("Membre :", membres_totaux)
                     montant = st.number_input("Montant (FCFA) :", min_value=1000, step=500)
                     mois = st.selectbox("Mois :", MOIS_ANNEE)
                     btn_cotis = st.form_submit_button("Enregistrer la cotisation")
