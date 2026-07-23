@@ -14,8 +14,8 @@ st.set_page_config(
 JSON_FILE = "cellules.json"
 IMAGE_FOND_PATH = "AhmaduBamba.jpg"
 
-# --- 🔑 DICTIONNAIRE DES CODES SECRETS ---
-CODES_SECRETS = {
+# --- 🔑 RÔLES / COMMISSIONS ET CODES D'ACCÈS PAR DÉFAUT DES CELLULES ---
+CODES_COMMISSIONS = {
     "SUPER_ADMIN": "JARAJEUF BOROM TOUBA",
     "Commission Administrative": "SINDINDI",
     "Commission Organisation / Zikrulah": "JALIBATOU",
@@ -23,24 +23,38 @@ CODES_SECRETS = {
     "Commission Finance": "MAWAHIBOU"
 }
 
-CELLULES_PAR_DEFAUT = ["Section Dakar", "Section Saint-Louis", "Section Ngoundiane", "Section Thiès", "Section Bambey"]
-COMMISSIONS_LISTE = list(CODES_SECRETS.keys())[1:]
+COMMISSIONS_LISTE = list(CODES_COMMISSIONS.keys())[1:]
 MOIS_ANNEE = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+
+CELLULES_INITIALES = {
+    "Section Dakar": "DKR.DNDN",
+    "Section Saint-Louis": "STL.DNDN",
+    "Section Ngoundiane": "NGOUNDIANE.DNDN",
+    "Section Thiès": "THIES.DNND",
+    "Section Bambey": "BAMBEY.DNDN"
+}
 
 # --- CHARGEMENT DES DONNÉES ---
 def charger_donnees():
     if os.path.exists(JSON_FILE):
         try:
             with open(JSON_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except json.JSONDecodeError as e:
-            st.error(f"⚠️ Erreur de format dans cellules.json : {e}")
+                donnees = json.load(f)
+                # Vérification / Migration des codes secrets de cellule
+                for cell, pwd in CELLULES_INITIALES.items():
+                    if cell in donnees and "code_acces" not in donnees[cell]:
+                        donnees[cell]["code_acces"] = pwd
+                return donnees
         except Exception as e:
             st.error(f"⚠️ Erreur de lecture du fichier : {e}")
             
     structure = {}
-    for cell in CELLULES_PAR_DEFAUT:
-        structure[cell] = {"Membres Simples": [], "Cotisations": []}
+    for cell, pwd in CELLULES_INITIALES.items():
+        structure[cell] = {
+            "code_acces": pwd,
+            "Membres Simples": [],
+            "Cotisations": []
+        }
         for comm in COMMISSIONS_LISTE:
             structure[cell][comm] = []
     return structure
@@ -54,6 +68,9 @@ def sauvegarder_donnees(donnees):
 
 if "donnees" not in st.session_state:
     st.session_state.donnees = charger_donnees()
+
+if "cellules_deverouillees" not in st.session_state:
+    st.session_state.cellules_deverouillees = []
 
 if "role_actif" not in st.session_state:
     st.session_state.role_actif = None
@@ -130,47 +147,51 @@ st.markdown(
 
 # --- ENTÊTE ---
 st.title("✨ DAHIRA NOUROU DARAYNI")
-st.caption("Plateforme web globale — Gestion multi-cellules")
+st.caption("Plateforme web globale — Gestion multi-cellules sécurisée")
 
 donnees = st.session_state.donnees
 role = st.session_state.role_actif
 
-# --- ESPACE DE CONNEXION ET SÉLECTION DE CELLULE ---
+# --- AUTHENTIFICATION DU RÔLE (COMMISSIONS & SUPER ADMIN) ---
 col_cell, col_secu = st.columns([2, 1])
 
 with col_cell:
-    cellules = list(donnees.keys()) if donnees else CELLULES_PAR_DEFAUT
-    cellule_selected = st.selectbox("📍 Sélectionner votre Cellule :", cellules)
+    cellules_dispos = list(donnees.keys())
+    cellule_selected = st.selectbox("📍 Sélectionner votre Cellule :", cellules_dispos)
 
-    # --- AJOUT DE CELLULE (SUPER ADMIN SEULEMENT) ---
+    # --- AJOUT D'UNE CELLULE AVEC CODE SECRET (SUPER ADMIN ONLY) ---
     if role == "SUPER_ADMIN":
         with st.expander("➕ Ajouter une nouvelle cellule (SUPER ADMIN)"):
             with st.form("form_nouvelle_cellule"):
                 nom_nouvelle_cell = st.text_input("Nom de la cellule (ex: Section Louga) :")
+                code_nouvelle_cell = st.text_input("Code d'accès secret pour cette cellule :", type="password")
                 btn_creer_cell = st.form_submit_button("Créer la cellule")
 
-                if btn_creer_cell and nom_nouvelle_cell:
+                if btn_creer_cell and nom_nouvelle_cell and code_nouvelle_cell:
                     nom_clean = nom_nouvelle_cell.strip()
                     if nom_clean in donnees:
                         st.error("⚠️ Cette cellule existe déjà !")
                     else:
-                        # Initialisation de la structure pour la nouvelle cellule
-                        donnees[nom_clean] = {"Membres Simples": [], "Cotisations": []}
+                        donnees[nom_clean] = {
+                            "code_acces": code_nouvelle_cell.strip(),
+                            "Membres Simples": [],
+                            "Cotisations": []
+                        }
                         for comm in COMMISSIONS_LISTE:
                             donnees[nom_clean][comm] = []
                             
                         sauvegarder_donnees(donnees)
-                        st.success(f"✅ La cellule '{nom_clean}' a été créée avec succès !")
+                        st.success(f"✅ La cellule '{nom_clean}' a été créée avec son code d'accès !")
                         st.rerun()
 
 with col_secu:
-    st.write("**🔒 Authentification**")
+    st.write("**🔑 Authentification Commission / Admin**")
     if role is None:
-        pwd = st.text_input("Entrez votre code secret :", type="password", key="pwd_login")
+        pwd_role = st.text_input("Code rôle/commission :", type="password", key="pwd_login")
         if st.button("🔓 S'authentifier"):
             role_trouve = None
-            for r, code in CODES_SECRETS.items():
-                if pwd == code:
+            for r, code in CODES_COMMISSIONS.items():
+                if pwd_role == code:
                     role_trouve = r
                     break
             
@@ -179,18 +200,38 @@ with col_secu:
                 st.success(f"Connecté : {role_trouve}")
                 st.rerun()
             else:
-                st.error("Code secret incorrect !")
+                st.error("Code rôle incorrect !")
     else:
         st.success(f"🟢 Actif : **{st.session_state.role_actif}**")
-        if st.button("🔒 Déconnexion"):
+        if st.button("🔒 Déconnexion Rôle"):
             st.session_state.role_actif = None
             st.rerun()
 
 st.divider()
 
+# --- VÉRIFICATION DE L'ACCÈS À LA CELLULE ---
 cell_data = donnees.get(cellule_selected, {})
+code_cellule_attendu = cell_data.get("code_acces", "TOUBA_2026")
 
-# --- PERMISSIONS ---
+est_super_admin = (role == "SUPER_ADMIN")
+cellule_deverouillee = (cellule_selected in st.session_state.cellules_deverouillees) or est_super_admin
+
+if not cellule_deverouillee:
+    st.warning(f"🔒 L'accès à la **{cellule_selected}** est protégé. Veuillez saisir le code d'accès de cette cellule pour continuer.")
+    with st.form("form_acces_cellule"):
+        pwd_cell_saisi = st.text_input(f"Code d'accès secret de la {cellule_selected} :", type="password")
+        btn_valider_cell = st.form_submit_button("Déverrouiller la cellule")
+
+        if btn_valider_cell:
+            if pwd_cell_saisi == code_cellule_attendu:
+                st.session_state.cellules_deverouillees.append(cellule_selected)
+                st.success(f"Bienvenue dans la {cellule_selected} !")
+                st.rerun()
+            else:
+                st.error("❌ Code d'accès de la cellule incorrect !")
+    st.stop()  # Bloque le reste de l'affichage tant que la cellule n'est pas déverrouillée
+
+# --- PERMISSIONS INTERNES ---
 def peut_gerer_membres_global():
     return role in ["SUPER_ADMIN", "Commission Administrative", "Commission Finance"]
 
