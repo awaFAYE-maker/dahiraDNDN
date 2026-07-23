@@ -30,7 +30,7 @@ CELLULES_INITIALES = {
     "Section Dakar": "DKR.DNDN",
     "Section Saint-Louis": "STL.DNDN",
     "Section Ngoundiane": "NGOUNDIANE.DNDN",
-    "Section Thiès": "THIES.DNND",
+    "Section Thiès": "THIES.DNDN",
     "Section Bambey": "BAMBEY.DNDN"
 }
 
