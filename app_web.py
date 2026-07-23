@@ -18,7 +18,7 @@ IMAGE_FOND_PATH = "AhmaduBamba.jpg"
 CODES_SECRETS = {
     "SUPER_ADMIN": "JARAJEUF BOROM TOUBA",
     "Commission Administrative": "SINDINDI",
-    "Commission Organisation / Zikrulah": "JALIBATOU",
+    "Commission Organisation / Zikrulah": JALIBATOU",
     "Commission Culturelle": "JAZBOU",
     "Commission Finance": "MAWAHIBOU"
 }
@@ -166,12 +166,10 @@ with col_secu:
 
 st.divider()
 
-# Récupération des données EXCLUSIVES à la cellule sélectionnée
 cell_data = donnees.get(cellule_selected, {})
 role = st.session_state.role_actif
 
 # --- PERMISSIONS ---
-# Seuls ADMIN et FINANCE (et SUPER_ADMIN) peuvent ajouter/supprimer des membres
 def peut_gerer_membres_global():
     return role in ["SUPER_ADMIN", "Commission Administrative", "Commission Finance"]
 
@@ -222,11 +220,10 @@ if menu == "🏠 Accueil":
     else:
         st.info(f"Aucun membre enregistré pour la {cellule_selected}.")
 
-# --- PAGE MEMBRES (VISIBLES PAR TOUS / AJOUT & SUPP RESTREINTS À ADMIN & FINANCE) ---
+# --- PAGE MEMBRES ---
 elif menu == "👥 Membres":
     st.header(f"Registre des Membres — {cellule_selected}")
 
-    # Restauration de l'accès direct aux fonctions d'ajout/suppression pour Admin et Finance
     if peut_gerer_membres_global():
         col_add, col_del = st.columns(2)
 
@@ -261,7 +258,6 @@ elif menu == "👥 Membres":
                     if st.button("Confirmer la suppression", type="primary"):
                         cell_data["Membres Simples"] = [m for m in membres_existants if m["nom"] != membre_a_supprimer]
                         
-                        # Retirer également des commissions de la cellule si présent
                         for comm in COMMISSIONS_LISTE:
                             cell_data[comm] = [m for m in cell_data.get(comm, []) if m.get("nom") != membre_a_supprimer]
                             
@@ -286,7 +282,6 @@ elif menu == "📋 Commissions":
 
     comm_selected = st.selectbox("Choisir une commission :", COMMISSIONS_LISTE)
 
-    # Permission d'ajouter dans une commission spécifique : Admin, Finance ou membre de la commission elle-même
     peut_gerer_comm = peut_gerer_membres_global() or a_permission(comm_selected)
 
     if comm_selected:
@@ -330,9 +325,7 @@ elif menu == "📋 Commissions":
                                     "adresse": nouvelle_adresse.strip() if nouvelle_adresse else "N/A",
                                     "profession": nouvelle_prof.strip() if nouvelle_prof else "N/A"
                                 }
-                                # Ajout dans la commission
                                 cell_data[comm_selected].append(nouveau_membre)
-                                # Ajout automatique dans le registre simple s'il n'y est pas
                                 if nouveau_membre not in cell_data.get("Membres Simples", []):
                                     cell_data.setdefault("Membres Simples", []).append(nouveau_membre)
                                 
@@ -368,28 +361,51 @@ elif menu == "💳 Cotisations":
     if not est_finance_ou_admin:
         st.error("🔒 Accès restreint. Seule la Commission Finance et le SUPER_ADMIN peuvent accéder aux cotisations.")
     else:
-        with st.expander("➕ Enregistrer une nouvelle cotisation"):
-            membres_totaux = [m["nom"] for m in obtenir_tous_les_membres_uniques(cell_data)]
-            if membres_totaux:
-                with st.form("form_cotisation"):
-                    nom_payeur = st.selectbox("Membre :", membres_totaux)
-                    montant = st.number_input("Montant (FCFA) :", min_value=1000, step=500)
-                    mois = st.selectbox("Mois :", MOIS_ANNEE)
-                    btn_cotis = st.form_submit_button("Enregistrer la cotisation")
+        col_cotis_add, col_cotis_del = st.columns(2)
 
-                    if btn_cotis:
-                        cell_data.setdefault("Cotisations", []).append({
-                            "membre": nom_payeur,
-                            "montant": montant,
-                            "mois": mois,
-                            "date": datetime.now().strftime("%Y-%m-%d %H:%M")
-                        })
+        with col_cotis_add:
+            with st.expander("➕ Enregistrer une nouvelle cotisation"):
+                membres_totaux = [m["nom"] for m in obtenir_tous_les_membres_uniques(cell_data)]
+                if membres_totaux:
+                    with st.form("form_cotisation"):
+                        nom_payeur = st.selectbox("Membre :", membres_totaux)
+                        montant = st.number_input("Montant (FCFA) :", min_value=1000, step=500)
+                        mois = st.selectbox("Mois :", MOIS_ANNEE)
+                        btn_cotis = st.form_submit_button("Enregistrer la cotisation")
+
+                        if btn_cotis:
+                            cell_data.setdefault("Cotisations", []).append({
+                                "membre": nom_payeur,
+                                "montant": montant,
+                                "mois": mois,
+                                "date": datetime.now().strftime("%Y-%m-%d %H:%M")
+                            })
+                            sauvegarder_donnees(donnees)
+                            st.success("Cotisation enregistrée avec succès !")
+                            st.rerun()
+                else:
+                    st.info("Veuillez d'abord enregistrer des membres dans cette cellule.")
+
+        with col_cotis_del:
+            with st.expander("🗑️ Supprimer une cotisation"):
+                cotisations_liste = cell_data.get("Cotisations", [])
+                if cotisations_liste:
+                    options_cotis = [
+                        f"{c['membre']} — {c['montant']:,.0f} FCFA ({c['mois']}) le {c.get('date', 'Date inconnue')}"
+                        for c in cotisations_liste
+                    ]
+                    cotis_choisie = st.selectbox("Sélectionner la cotisation à supprimer :", options_cotis)
+                    
+                    if st.button("Supprimer cette cotisation", type="primary"):
+                        idx = options_cotis.index(cotis_choisie)
+                        cotisation_retiree = cell_data["Cotisations"].pop(idx)
                         sauvegarder_donnees(donnees)
-                        st.success("Cotisation enregistrée avec succès !")
+                        st.success(f"Cotisation de {cotisation_retiree['membre']} ({cotisation_retiree['montant']} FCFA) supprimée !")
                         st.rerun()
-            else:
-                st.info("Veuillez d'abord enregistrer des membres dans cette cellule.")
+                else:
+                    st.info("Aucune cotisation enregistrée à supprimer.")
 
+        st.subheader(f"Historique des cotisations ({cellule_selected})")
         cotisations = cell_data.get("Cotisations", []) if isinstance(cell_data, dict) else []
         if cotisations:
             st.dataframe(list(reversed(cotisations)), use_container_width=True)
