@@ -28,7 +28,7 @@ CODES_COMMISSIONS = {
     "Commission Finance": "MAWAHIBOU"
 }
 
-CODE_ARCHIVES_SECRET = "ARCHIVES_2026"  # Code d'accès dédié aux archives si pas SUPER_ADMIN
+CODE_ARCHIVES_SECRET = "ARCHIVES.DOC.DNDN"  # Code d'accès dédié aux archives si pas SUPER_ADMIN
 
 COMMISSIONS_LISTE = list(CODES_COMMISSIONS.keys())[1:]
 MOIS_ANNEE = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
