@@ -2,6 +2,8 @@ import streamlit as st
 import json
 import os
 import base64
+import csv
+import io
 from datetime import datetime
 
 # --- CONFIGURATION DE LA PAGE ---
@@ -42,6 +44,33 @@ CELLULES_INITIALES = {
     "Section Bambey": "BAMBEY.DNDN"
 }
 
+# --- TEXTES POUR LA PAGE À PROPOS ---
+TEXTE_DAHIRA = """
+Une **dahira** est une association religieuse mouride qui regroupe des talibés (disciples) autour
+de la pratique du dhikr, des enseignements soufis et de l'organisation collective de la vie
+communautaire : cotisations, entraide sociale, participation aux grands événements religieux
+(Magal, Gamou, Ziarra) et soutien mutuel entre membres. C'est à la fois un lieu de spiritualité
+et un espace de solidarité et d'organisation sociale.
+
+La **Dahira Nourou Darayni** s'inscrit dans cette tradition : elle réunit ses membres autour des
+enseignements de Cheikh Ahmadou Bamba, organise ses commissions (Administrative, Organisation /
+Zikrulah, Culturelle, Finance) et gère la vie collective de ses différentes sections à travers le
+Sénégal.
+"""
+
+TEXTE_CHEIKH_AHMADOU_BAMBA = """
+Né vers 1853 à Mbacké, dans le Baol (Sénégal), **Cheikh Ahmadou Bamba Mbacké** est le fondateur
+de la confrérie mouride, l'un des plus grands mouvements soufis d'Afrique de l'Ouest.
+
+Il a prôné le travail et la prière comme voies complémentaires vers Dieu, résumées dans la
+formule du **Khidma** (le service par le travail). Face à son influence grandissante, l'administration
+coloniale française l'exila à plusieurs reprises, notamment au Gabon puis en Mauritanie.
+
+Il fonda la ville sainte de **Touba**, aujourd'hui le principal centre spirituel du mouridisme, où se
+tient chaque année le **Grand Magal** commémorant son premier exil. Son enseignement continue de
+structurer la vie de millions de disciples à travers les dahiras, au Sénégal comme dans la diaspora.
+"""
+
 # --- CHARGEMENT DES DONNÉES ---
 def charger_donnees():
     if os.path.exists(JSON_FILE):
@@ -59,7 +88,7 @@ def charger_donnees():
                 return donnees
         except Exception as e:
             st.error(f"⚠️ Erreur de lecture du fichier : {e}")
-            
+
     structure = {}
     for cell, pwd in CELLULES_INITIALES.items():
         structure[cell] = {
@@ -73,12 +102,14 @@ def charger_donnees():
             structure[cell][comm] = []
     return structure
 
+
 def sauvegarder_donnees(donnees):
     try:
         with open(JSON_FILE, "w", encoding="utf-8") as f:
             json.dump(donnees, f, ensure_ascii=False, indent=2)
     except Exception as e:
         st.error(f"Erreur de sauvegarde : {e}")
+
 
 if "donnees" not in st.session_state:
     st.session_state.donnees = charger_donnees()
@@ -119,13 +150,13 @@ st.markdown(
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.55);
+        background-color: rgba(0, 0, 0, 0.68);
         z-index: 0;
     }}
 
     h1, h2, h3, h4, h5, h6, p, label, span, div, li {{
         color: #FFFFFF !important;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9) !important;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
     }}
 
     [data-testid="stMetricValue"] {{
@@ -142,7 +173,7 @@ st.markdown(
     }}
 
     [data-testid="stSidebar"] {{
-        background-color: rgba(15, 23, 42, 0.85) !important;
+        background-color: rgba(15, 23, 42, 0.9) !important;
         backdrop-filter: blur(8px);
     }}
 
@@ -156,6 +187,14 @@ st.markdown(
     .stTextInput input, .stSelectbox div, .stNumberInput input {{
         color: #000000 !important;
         text-shadow: none !important;
+    }}
+
+    .carte-apropos {{
+        background-color: rgba(15, 23, 42, 0.55);
+        border-radius: 14px;
+        padding: 1.4rem 1.6rem;
+        margin-bottom: 1.2rem;
+        border: 1px solid rgba(255, 255, 255, 0.15);
     }}
     </style>
     """,
@@ -197,7 +236,7 @@ with col_cell:
                         }
                         for comm in COMMISSIONS_LISTE:
                             donnees[nom_clean][comm] = []
-                            
+
                         sauvegarder_donnees(donnees)
                         st.success(f"✅ La cellule '{nom_clean}' a été créée avec son code d'accès !")
                         st.rerun()
@@ -212,7 +251,7 @@ with col_secu:
                 if pwd_role == code:
                     role_trouve = r
                     break
-            
+
             if role_trouve:
                 st.session_state.role_actif = role_trouve
                 st.success(f"Connecté : {role_trouve}")
@@ -253,6 +292,7 @@ if not cellule_deverouillee:
 def peut_gerer_membres_global():
     return role in ["SUPER_ADMIN", "Commission Administrative", "Commission Finance"]
 
+
 def a_permission(nom_commission=None):
     if role == "SUPER_ADMIN":
         return True
@@ -260,35 +300,52 @@ def a_permission(nom_commission=None):
         return True
     return False
 
+
 def obtenir_tous_les_membres_uniques(c_data):
     tous_membres = []
     noms_vus = set()
-    
+
     for m in c_data.get("Membres Simples", []):
         if isinstance(m, dict) and m.get("nom") and m["nom"] not in noms_vus:
             tous_membres.append(m)
             noms_vus.add(m["nom"])
-            
+
     for comm in COMMISSIONS_LISTE:
         for m in c_data.get(comm, []):
             if isinstance(m, dict) and m.get("nom") and m["nom"] not in noms_vus:
                 tous_membres.append(m)
                 noms_vus.add(m["nom"])
-                
+
     return tous_membres
 
+
+def cotisations_vers_csv(liste_cotisations):
+    """Convertit une liste de cotisations en texte CSV téléchargeable."""
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["Membre", "Événement", "Montant (FCFA)", "Mois", "Date d'enregistrement"])
+    for c in liste_cotisations:
+        writer.writerow([c.get("membre", ""), c.get("evenement", ""), c.get("montant", 0), c.get("mois", ""), c.get("date", "")])
+    return buffer.getvalue().encode("utf-8-sig")
+
+
 # --- NAVIGATION ---
-menu = st.sidebar.radio("Navigation", ["🏠 Accueil", "👥 Membres", "📋 Commissions", "💳 Cotisations", "📁 Archivage Documents"])
+menu = st.sidebar.radio(
+    "Navigation",
+    ["🏠 Accueil", "👥 Membres", "📋 Commissions", "💳 Cotisations", "📁 Archivage Documents", "ℹ️ À propos"]
+)
 
 # --- ACCUEIL ---
 if menu == "🏠 Accueil":
     st.header(f"Tableau de Bord — {cellule_selected}")
 
     membres_uniques = obtenir_tous_les_membres_uniques(cell_data)
+    total_cotise = sum(c["montant"] for c in cell_data.get("Cotisations", []))
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     col1.metric("👥 Total Membres (Cellule)", len(membres_uniques))
     col2.metric("📋 Commissions", len(COMMISSIONS_LISTE))
+    col3.metric("💰 Total Cotisé (toutes périodes)", f"{total_cotise:,.0f} FCFA")
 
     st.subheader("Derniers Membres Inscrits")
     membres_recents = membres_uniques[-5:]
@@ -336,7 +393,7 @@ elif menu == "👥 Membres":
                         cell_data["Membres Simples"] = [m for m in membres_existants if m["nom"] != membre_a_supprimer]
                         for comm in COMMISSIONS_LISTE:
                             cell_data[comm] = [m for m in cell_data.get(comm, []) if m.get("nom") != membre_a_supprimer]
-                            
+
                         sauvegarder_donnees(donnees)
                         st.success(f"Membre {membre_a_supprimer} supprimé de la cellule !")
                         st.rerun()
@@ -346,19 +403,19 @@ elif menu == "👥 Membres":
         st.info("ℹ️ Mode lecture seule. Seules les Commissions Administrative et Finance peuvent inscrire ou supprimer des membres.")
 
     st.subheader(f"🔍 Recherche & Liste générale des membres ({cellule_selected})")
-    
+
     recherche = st.text_input("🔎 Rechercher par métier/profession, nom ou adresse (ex: electricien, étudiant) :", key="search_bar")
     membres_totaux = obtenir_tous_les_membres_uniques(cell_data)
 
     if recherche.strip():
         terme = recherche.strip().lower()
         membres_filtres = [
-            m for m in membres_totaux 
-            if terme in m.get("profession", "").lower() 
-            or terme in m.get("nom", "").lower() 
+            m for m in membres_totaux
+            if terme in m.get("profession", "").lower()
+            or terme in m.get("nom", "").lower()
             or terme in m.get("adresse", "").lower()
         ]
-        
+
         st.success(f"🎯 **{len(membres_filtres)}** membre(s) trouvé(s) pour la recherche « **{recherche}** »")
         if membres_filtres:
             st.dataframe(membres_filtres, use_container_width=True)
@@ -402,7 +459,7 @@ elif menu == "📋 Commissions":
                                 st.rerun()
                         else:
                             st.info("Tous les membres du registre sont déjà dans cette commission ou le registre est vide.")
-                    
+
                     else:
                         with st.form("form_nouveau_membre_comm"):
                             nouveau_nom = st.text_input("Nom et Prénom *")
@@ -421,7 +478,7 @@ elif menu == "📋 Commissions":
                                 cell_data[comm_selected].append(nouveau_membre)
                                 if nouveau_membre not in cell_data.get("Membres Simples", []):
                                     cell_data.setdefault("Membres Simples", []).append(nouveau_membre)
-                                
+
                                 sauvegarder_donnees(donnees)
                                 st.success(f"{nouveau_nom} créé et ajouté à {comm_selected} !")
                                 st.rerun()
@@ -507,7 +564,7 @@ elif menu == "💳 Cotisations":
                         for c in cotisations_liste
                     ]
                     cotis_choisie = st.selectbox("Sélectionner la cotisation à supprimer :", options_cotis)
-                    
+
                     if st.button("Supprimer cette cotisation", type="primary"):
                         idx = options_cotis.index(cotis_choisie)
                         cotisation_retiree = cell_data["Cotisations"].pop(idx)
@@ -519,19 +576,36 @@ elif menu == "💳 Cotisations":
 
         st.divider()
         st.subheader(f"📊 Historique et Bilan des Cotisations ({cellule_selected})")
-        
+
         cotisations = cell_data.get("Cotisations", []) if isinstance(cell_data, dict) else []
 
         if cotisations:
             filtre_evt = st.selectbox("Filtrer l'historique par événement :", ["Tous les événements"] + evenements_cell)
-            
+
             if filtre_evt != "Tous les événements":
                 cotis_affichees = [c for c in cotisations if c.get("evenement") == filtre_evt]
             else:
                 cotis_affichees = cotisations
 
             total_collecte = sum(c["montant"] for c in cotis_affichees)
-            st.metric(f"💰 Total Collecté ({filtre_evt})", f"{total_collecte:,.0f} FCFA")
+            col_total, col_export = st.columns([3, 1])
+            col_total.metric(f"💰 Total Collecté ({filtre_evt})", f"{total_collecte:,.0f} FCFA")
+            with col_export:
+                st.write("")
+                st.download_button(
+                    "📤 Exporter en CSV",
+                    data=cotisations_vers_csv(cotis_affichees),
+                    file_name=f"cotisations_{cellule_selected.replace(' ', '_')}.csv",
+                    mime="text/csv"
+                )
+
+            # Évolution des montants collectés par mois
+            totaux_par_mois = {mois_nom: 0 for mois_nom in MOIS_ANNEE}
+            for c in cotis_affichees:
+                if c.get("mois") in totaux_par_mois:
+                    totaux_par_mois[c["mois"]] += c["montant"]
+            st.caption("Évolution des montants collectés par mois")
+            st.bar_chart(totaux_par_mois)
 
             st.dataframe(list(reversed(cotis_affichees)), use_container_width=True)
         else:
@@ -567,7 +641,7 @@ elif menu == "📁 Archivage Documents":
         with st.expander("📤 Archiver un nouveau document"):
             fichier_uploade = st.file_uploader("Sélectionner un fichier (PDF, Word, Excel, Image...)", type=None)
             description_doc = st.text_input("Description / Objet du document :")
-            
+
             if st.button("Sauvegarder dans les archives"):
                 if fichier_uploade is not None:
                     nom_fichier = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{fichier_uploade.name}"
@@ -622,7 +696,7 @@ elif menu == "📁 Archivage Documents":
                 if st.button("🗑️ Supprimer", key=f"del_doc_{idx}"):
                     if os.path.exists(chemin_doc):
                         os.remove(chemin_doc)
-                    
+
                     real_idx = len(archives_cellule) - 1 - idx
                     archives_cellule.pop(real_idx)
                     sauvegarder_donnees(donnees)
@@ -631,3 +705,15 @@ elif menu == "📁 Archivage Documents":
             st.divider()
     else:
         st.info(f"Aucun document n'a encore été archivé pour la {cellule_selected}.")
+
+# --- À PROPOS ---
+elif menu == "ℹ️ À propos":
+    st.header("À propos de la Dahira")
+
+    st.markdown(f"<div class='carte-apropos'><h3>🕌 Qu'est-ce qu'une Dahira ?</h3>{TEXTE_DAHIRA}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='carte-apropos'><h3>📜 Cheikh Ahmadou Bamba (1853–1927)</h3>{TEXTE_CHEIKH_AHMADOU_BAMBA}</div>", unsafe_allow_html=True)
+
+    st.divider()
+    st.subheader("Nos Commissions")
+    for comm in COMMISSIONS_LISTE:
+        st.markdown(f"- **{comm}**")
