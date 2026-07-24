@@ -329,6 +329,24 @@ def cotisations_vers_csv(liste_cotisations):
     return buffer.getvalue().encode("utf-8-sig")
 
 
+def stats_globales(toutes_les_donnees):
+    """Calcule les statistiques agrégées sur l'ensemble des cellules (toutes sections)."""
+    nb_membres_total = 0
+    nb_cotisations_total = 0
+    montant_total = 0
+    for c_data in toutes_les_donnees.values():
+        nb_membres_total += len(obtenir_tous_les_membres_uniques(c_data))
+        cotis = c_data.get("Cotisations", [])
+        nb_cotisations_total += len(cotis)
+        montant_total += sum(c.get("montant", 0) for c in cotis)
+    return {
+        "nb_sections": len(toutes_les_donnees),
+        "nb_membres_total": nb_membres_total,
+        "nb_cotisations_total": nb_cotisations_total,
+        "montant_total": montant_total,
+    }
+
+
 # --- NAVIGATION ---
 menu = st.sidebar.radio(
     "Navigation",
@@ -337,16 +355,55 @@ menu = st.sidebar.radio(
 
 # --- ACCUEIL ---
 if menu == "🏠 Accueil":
-    st.header(f"Tableau de Bord — {cellule_selected}")
+    st.markdown(
+        "<div class='carte-apropos'>"
+        "<p style='letter-spacing:2px; font-size:0.85rem; opacity:0.85;'>—— DAHIRA NOUROU DARAYNI</p>"
+        f"<h2 style='margin-top:0;'>Bienvenue, {cellule_selected}</h2>"
+        "<p>Gérez vos membres, vos commissions, vos cotisations et vos archives depuis un seul espace, "
+        "au service de la dahira et dans l'esprit de Cheikh Ahmadou Bamba.</p>"
+        "</div>",
+        unsafe_allow_html=True
+    )
 
     membres_uniques = obtenir_tous_les_membres_uniques(cell_data)
     total_cotise = sum(c["montant"] for c in cell_data.get("Cotisations", []))
+    stats_g = stats_globales(donnees)
 
+    st.subheader(f"Tableau de Bord — {cellule_selected}")
     col1, col2, col3 = st.columns(3)
     col1.metric("👥 Total Membres (Cellule)", len(membres_uniques))
     col2.metric("📋 Commissions", len(COMMISSIONS_LISTE))
     col3.metric("💰 Total Cotisé (toutes périodes)", f"{total_cotise:,.0f} FCFA")
 
+    with st.expander("🌍 Vue d'ensemble — toutes les sections de la Dahira"):
+        cg1, cg2, cg3 = st.columns(3)
+        cg1.metric("🏘️ Sections actives", stats_g["nb_sections"])
+        cg2.metric("👥 Membres (toutes sections)", stats_g["nb_membres_total"])
+        cg3.metric("💰 Cotisations collectées (toutes sections)", f"{stats_g['montant_total']:,.0f} FCFA")
+
+    st.divider()
+
+    col_evt, col_marche = st.columns(2)
+
+    with col_evt:
+        st.subheader("🎪 Événements de la cellule")
+        evenements_cell_accueil = cell_data.get("Evenements", EVENEMENTS_DEFAUT.copy())
+        if evenements_cell_accueil:
+            for evt in evenements_cell_accueil:
+                st.markdown(f"- {evt}")
+        else:
+            st.info("Aucun événement enregistré pour l'instant.")
+        st.caption("💳 Cotisations acceptées via Wave, Orange Money ou en espèces auprès de la Commission Finance.")
+
+    with col_marche:
+        st.subheader("📌 Comment ça marche")
+        st.markdown(
+            "**1. Rejoindre la dahira** — Se rapprocher de la Commission Administrative de sa section.\n\n"
+            "**2. Être enregistré** — Vos informations (nom, contact, profession) sont ajoutées au registre des membres.\n\n"
+            "**3. Cotiser régulièrement** — Mensualités et cotisations d'événements enregistrées et suivies dans l'application."
+        )
+
+    st.divider()
     st.subheader("Derniers Membres Inscrits")
     membres_recents = membres_uniques[-5:]
     if membres_recents:
@@ -517,6 +574,7 @@ elif menu == "💳 Cotisations":
 
         with col_cotis_add:
             with st.expander("➕ Enregistrer une nouvelle cotisation"):
+                st.caption("💳 Moyens de paiement acceptés : Wave · Orange Money · Espèces")
                 membres_totaux = [m["nom"] for m in obtenir_tous_les_membres_uniques(cell_data)]
                 if membres_totaux:
                     with st.form("form_cotisation"):
