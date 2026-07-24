@@ -13,15 +13,22 @@ st.set_page_config(
 
 JSON_FILE = "cellules.json"
 IMAGE_FOND_PATH = "AhmaduBamba.jpg"
+DOSSIER_ARCHIVES = "archives_documents"
+
+# Création du dossier d'archivage s'il n'existe pas
+if not os.path.exists(DOSSIER_ARCHIVES):
+    os.makedirs(DOSSIER_ARCHIVES)
 
 # --- 🔑 RÔLES / COMMISSIONS ET CODES D'ACCÈS ---
 CODES_COMMISSIONS = {
     "SUPER_ADMIN": "JARAJEUF BOROM TOUBA",
-    "Commission Administrative": "SINDINDI",
+    "Commission Administrative": "SNDINDI",
     "Commission Organisation / Zikrulah": "JALIBATOU",
     "Commission Culturelle": "JAZBOU",
     "Commission Finance": "MAWAHIBOU"
 }
+
+CODE_ARCHIVES_SECRET = "ARCHIVES_2026"  # Code d'accès dédié aux archives si pas SUPER_ADMIN
 
 COMMISSIONS_LISTE = list(CODES_COMMISSIONS.keys())[1:]
 MOIS_ANNEE = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
@@ -47,6 +54,8 @@ def charger_donnees():
                             donnees[cell]["code_acces"] = pwd
                         if "Evenements" not in donnees[cell]:
                             donnees[cell]["Evenements"] = EVENEMENTS_DEFAUT.copy()
+                        if "Archives" not in donnees[cell]:
+                            donnees[cell]["Archives"] = []
                 return donnees
         except Exception as e:
             st.error(f"⚠️ Erreur de lecture du fichier : {e}")
@@ -57,7 +66,8 @@ def charger_donnees():
             "code_acces": pwd,
             "Membres Simples": [],
             "Cotisations": [],
-            "Evenements": EVENEMENTS_DEFAUT.copy()
+            "Evenements": EVENEMENTS_DEFAUT.copy(),
+            "Archives": []
         }
         for comm in COMMISSIONS_LISTE:
             structure[cell][comm] = []
@@ -78,6 +88,9 @@ if "cellules_deverouillees" not in st.session_state:
 
 if "role_actif" not in st.session_state:
     st.session_state.role_actif = None
+
+if "archives_deverouillees" not in st.session_state:
+    st.session_state.archives_deverouillees = False
 
 # --- IMAGE DE FOND ET STYLE CSS ---
 bg_css = ""
@@ -179,7 +192,8 @@ with col_cell:
                             "code_acces": code_nouvelle_cell.strip(),
                             "Membres Simples": [],
                             "Cotisations": [],
-                            "Evenements": EVENEMENTS_DEFAUT.copy()
+                            "Evenements": EVENEMENTS_DEFAUT.copy(),
+                            "Archives": []
                         }
                         for comm in COMMISSIONS_LISTE:
                             donnees[nom_clean][comm] = []
@@ -264,7 +278,7 @@ def obtenir_tous_les_membres_uniques(c_data):
     return tous_membres
 
 # --- NAVIGATION ---
-menu = st.sidebar.radio("Navigation", ["🏠 Accueil", "👥 Membres", "📋 Commissions", "💳 Cotisations"])
+menu = st.sidebar.radio("Navigation", ["🏠 Accueil", "👥 Membres", "📋 Commissions", "💳 Cotisations", "📁 Archivage Documents"])
 
 # --- ACCUEIL ---
 if menu == "🏠 Accueil":
@@ -283,7 +297,7 @@ if menu == "🏠 Accueil":
     else:
         st.info(f"Aucun membre enregistré pour la {cellule_selected}.")
 
-# --- MEMBRES (AVEC BARRE DE RECHERCHE PAR MÉTIER / RECHERCHE GLOBALE) ---
+# --- MEMBRES ---
 elif menu == "👥 Membres":
     st.header(f"Registre des Membres — {cellule_selected}")
 
@@ -333,9 +347,7 @@ elif menu == "👥 Membres":
 
     st.subheader(f"🔍 Recherche & Liste générale des membres ({cellule_selected})")
     
-    # Barre de recherche dynamique
     recherche = st.text_input("🔎 Rechercher par métier/profession, nom ou adresse (ex: electricien, étudiant) :", key="search_bar")
-
     membres_totaux = obtenir_tous_les_membres_uniques(cell_data)
 
     if recherche.strip():
@@ -433,7 +445,7 @@ elif menu == "📋 Commissions":
         else:
             st.info("Aucun membre affecté à cette commission pour l'instant.")
 
-# --- COTISATIONS PAR CATÉGORIE / ÉVÉNEMENTS PERSONNALISÉS ---
+# --- COTISATIONS ---
 elif menu == "💳 Cotisations":
     st.header(f"Cotisations — {cellule_selected}")
 
@@ -511,7 +523,6 @@ elif menu == "💳 Cotisations":
         cotisations = cell_data.get("Cotisations", []) if isinstance(cell_data, dict) else []
 
         if cotisations:
-            # Filtre par événement
             filtre_evt = st.selectbox("Filtrer l'historique par événement :", ["Tous les événements"] + evenements_cell)
             
             if filtre_evt != "Tous les événements":
@@ -525,3 +536,98 @@ elif menu == "💳 Cotisations":
             st.dataframe(list(reversed(cotis_affichees)), use_container_width=True)
         else:
             st.info("Aucune cotisation enregistrée pour le moment.")
+
+# --- ARCHIVAGE DOCUMENTS (RÉSERVÉ SUPER ADMIN OU CODE ARCHIVES) ---
+elif menu == "📁 Archivage Documents":
+    st.header(f"Coffre-fort Documents & Archives — {cellule_selected}")
+
+    est_autorise = est_super_admin or st.session_state.archives_deverouillees
+
+    if not est_autorise:
+        st.warning("🔒 L'accès au coffre-fort d'archivage est restreint. Veuillez saisir le code d'accès des archives ou vous connecter en SUPER_ADMIN.")
+        with st.form("form_acces_archives"):
+            code_saisi = st.text_input("Code d'accès secret aux archives :", type="password")
+            btn_unlock_archives = st.form_submit_button("Déverrouiller les archives")
+
+            if btn_unlock_archives:
+                if code_saisi == CODE_ARCHIVES_SECRET:
+                    st.session_state.archives_deverouillees = True
+                    st.success("Accès aux archives accordé !")
+                    st.rerun()
+                else:
+                    st.error("❌ Code secret incorrect !")
+        st.stop()
+
+    # SECTION UNE FOIS AUTORISÉ
+    col_upload, col_stat = st.columns([2, 1])
+
+    archives_cellule = cell_data.setdefault("Archives", [])
+
+    with col_upload:
+        with st.expander("📤 Archiver un nouveau document"):
+            fichier_uploade = st.file_uploader("Sélectionner un fichier (PDF, Word, Excel, Image...)", type=None)
+            description_doc = st.text_input("Description / Objet du document :")
+            
+            if st.button("Sauvegarder dans les archives"):
+                if fichier_uploade is not None:
+                    nom_fichier = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{fichier_uploade.name}"
+                    chemin_sauvegarde = os.path.join(DOSSIER_ARCHIVES, nom_fichier)
+
+                    with open(chemin_sauvegarde, "wb") as f:
+                        f.write(fichier_uploade.getbuffer())
+
+                    doc_info = {
+                        "nom_original": fichier_uploade.name,
+                        "nom_stocke": nom_fichier,
+                        "description": description_doc if description_doc else "Aucune description",
+                        "taille_ko": round(len(fichier_uploade.getbuffer()) / 1024, 2),
+                        "date": datetime.now().strftime("%Y-%m-%d %H:%M")
+                    }
+
+                    archives_cellule.append(doc_info)
+                    sauvegarder_donnees(donnees)
+                    st.success(f"Document '{fichier_uploade.name}' archivé avec succès !")
+                    st.rerun()
+                else:
+                    st.error("Veuillez sélectionner un fichier avant d'enregistrer.")
+
+    with col_stat:
+        st.metric("📁 Documents Archivés", len(archives_cellule))
+
+    st.divider()
+    st.subheader(f"📑 Liste des documents archivés ({cellule_selected})")
+
+    if archives_cellule:
+        for idx, doc in enumerate(reversed(archives_cellule)):
+            chemin_doc = os.path.join(DOSSIER_ARCHIVES, doc["nom_stocke"])
+            col_doc1, col_doc2, col_doc3 = st.columns([3, 1, 1])
+
+            with col_doc1:
+                st.markdown(f"**📄 {doc['nom_original']}**")
+                st.caption(f"📝 {doc['description']} | 📅 {doc['date']} | 💾 {doc['taille_ko']} KB")
+
+            with col_doc2:
+                if os.path.exists(chemin_doc):
+                    with open(chemin_doc, "rb") as file_data:
+                        st.download_button(
+                            label="📥 Télécharger",
+                            data=file_data,
+                            file_name=doc['nom_original'],
+                            key=f"dl_{idx}"
+                        )
+                else:
+                    st.error("Fichier introuvable")
+
+            with col_doc3:
+                if st.button("🗑️ Supprimer", key=f"del_doc_{idx}"):
+                    if os.path.exists(chemin_doc):
+                        os.remove(chemin_doc)
+                    
+                    real_idx = len(archives_cellule) - 1 - idx
+                    archives_cellule.pop(real_idx)
+                    sauvegarder_donnees(donnees)
+                    st.success("Document supprimé !")
+                    st.rerun()
+            st.divider()
+    else:
+        st.info(f"Aucun document n'a encore été archivé pour la {cellule_selected}.")
