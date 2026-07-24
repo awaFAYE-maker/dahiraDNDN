@@ -71,6 +71,31 @@ tient chaque année le **Grand Magal** commémorant son premier exil. Son enseig
 structurer la vie de millions de disciples à travers les dahiras, au Sénégal comme dans la diaspora.
 """
 
+TEXTE_CHEIKH_IBRA_FALL = """
+**Mame Cheikh Ibra Fall (1858–1930)** fut le tout premier disciple de Cheikh Ahmadou Bamba et
+son plus fidèle serviteur. Il est le fondateur de la voie des **Baye Fall**, une branche du
+mouridisme fondée sur la soumission totale au maître et le **travail (Khidma)** érigé en acte
+d'adoration à part entière, en complément — et parfois à la place — des piliers rituels classiques.
+
+Les Baye Fall se reconnaissent traditionnellement à leurs habits rapiécés colorés (le **mbubb**),
+symbole d'humilité et de détachement des biens matériels, et à leur dévouement inlassable au
+service de la communauté : construction, agriculture, organisation des grands événements
+religieux. Ils incarnent l'idée que le travail accompli avec sincérité et pour la communauté est
+une forme de prière.
+"""
+
+TEXTE_PERSPECTIVES = """
+Une dahira ne se limite pas à la collecte des cotisations : c'est aussi un espace vivant qui peut
+grandir autour de nouveaux projets. Quelques pistes qui inspirent souvent les dahiras aujourd'hui :
+
+- **Cours de Coran et d'arabe** pour les enfants et les nouveaux talibés
+- **Caisse de solidarité** pour les événements heureux (mariages, naissances) et les épreuves (maladie, deuil)
+- **Organisation de Gamou et Ziarra** vers Touba et les autres lieux saints
+- **Formation professionnelle** des jeunes membres (artisanat, numérique, agriculture)
+- **Bibliothèque numérique** des Xassidas (poèmes) de Cheikh Ahmadou Bamba
+- **Sensibilisation et santé communautaire** en lien avec les commissions locales
+"""
+
 # --- CHARGEMENT DES DONNÉES ---
 def charger_donnees():
     if os.path.exists(JSON_FILE):
@@ -366,20 +391,18 @@ if menu == "🏠 Accueil":
     )
 
     membres_uniques = obtenir_tous_les_membres_uniques(cell_data)
-    total_cotise = sum(c["montant"] for c in cell_data.get("Cotisations", []))
     stats_g = stats_globales(donnees)
 
     st.subheader(f"Tableau de Bord — {cellule_selected}")
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     col1.metric("👥 Total Membres (Cellule)", len(membres_uniques))
     col2.metric("📋 Commissions", len(COMMISSIONS_LISTE))
-    col3.metric("💰 Total Cotisé (toutes périodes)", f"{total_cotise:,.0f} FCFA")
 
     with st.expander("🌍 Vue d'ensemble — toutes les sections de la Dahira"):
-        cg1, cg2, cg3 = st.columns(3)
+        cg1, cg2 = st.columns(2)
         cg1.metric("🏘️ Sections actives", stats_g["nb_sections"])
         cg2.metric("👥 Membres (toutes sections)", stats_g["nb_membres_total"])
-        cg3.metric("💰 Cotisations collectées (toutes sections)", f"{stats_g['montant_total']:,.0f} FCFA")
+        st.caption("💡 Le détail des cotisations est réservé à la Commission Finance (page Cotisations).")
 
     st.divider()
 
@@ -410,6 +433,22 @@ if menu == "🏠 Accueil":
         st.table(membres_recents)
     else:
         st.info(f"Aucun membre enregistré pour la {cellule_selected}.")
+
+    st.divider()
+    st.subheader("🌟 Nos valeurs")
+    v1, v2, v3, v4 = st.columns(4)
+    with v1:
+        st.markdown("**🤲 Khidma**")
+        st.caption("Le service et le travail comme voie de rapprochement avec Dieu.")
+    with v2:
+        st.markdown("**🕌 Zikrulah**")
+        st.caption("La pratique régulière du dhikr et des enseignements soufis.")
+    with v3:
+        st.markdown("**🤝 Entraide**")
+        st.caption("La solidarité entre membres, dans la joie comme dans l'épreuve.")
+    with v4:
+        st.markdown("**📚 Transmission**")
+        st.caption("Le partage des enseignements de Cheikh Ahmadou Bamba aux générations futures.")
 
 # --- MEMBRES ---
 elif menu == "👥 Membres":
@@ -770,6 +809,8 @@ elif menu == "ℹ️ À propos":
 
     st.markdown(f"<div class='carte-apropos'><h3>🕌 Qu'est-ce qu'une Dahira ?</h3>{TEXTE_DAHIRA}</div>", unsafe_allow_html=True)
     st.markdown(f"<div class='carte-apropos'><h3>📜 Cheikh Ahmadou Bamba (1853–1927)</h3>{TEXTE_CHEIKH_AHMADOU_BAMBA}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='carte-apropos'><h3>🧵 Mame Cheikh Ibra Fall et les Baye Fall</h3>{TEXTE_CHEIKH_IBRA_FALL}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='carte-apropos'><h3>🌱 Perspectives pour la Dahira</h3>{TEXTE_PERSPECTIVES}</div>", unsafe_allow_html=True)
 
     st.divider()
     st.subheader("Nos Commissions")
