@@ -400,36 +400,54 @@ elif menu == "📲 Rappels WhatsApp":
     message_personnalise = st.text_area("Texte du message à diffuser :", value=msg_defaut, height=120)
 
     st.divider()
-    st.subheader("📢 2. Diffusion à tous les membres en 1 clic")
+    st.subheader("☑️ 2. Cocher les membres destinataires")
 
     if membres_avec_tel:
-        numeros_groupes = ", ".join([f"+{nettoyer_numero(m['tel'])}" for m in membres_avec_tel])
+        tout_cocher = st.checkbox("✅ Sélectionner / Tout cocher", value=True)
+
+        membres_selectionnes = []
+        col_c1, col_c2 = st.columns(2)
         
-        st.write("📋 **Copier tous les numéros au format international (pour Liste de Diffusion WhatsApp) :**")
-        st.code(numeros_groupes, language="text")
-        st.info("💡 **Méthode d'envoi à tous en même temps :** Copiez la liste de numéros ci-dessus, créez une **'Nouvelle Diffusion'** dans votre application WhatsApp sur votre téléphone, collez les numéros et envoyez le message !")
+        for i, m in enumerate(membres_avec_tel):
+            col_target = col_c1 if i % 2 == 0 else col_c2
+            est_coche = col_target.checkbox(f"{m['nom']} ({m['tel']})", value=tout_cocher, key=f"cb_m_{i}")
+            if est_coche:
+                membres_selectionnes.append(m)
 
         st.divider()
-        st.subheader("🔗 3. Liens d'envoi rapide individuel")
+        st.subheader("📢 3. Liste de diffusion générée")
 
-        texte_encode = urllib.parse.quote(message_personnalise)
-
-        col_m1, col_m2 = st.columns(2)
-        for i, m in enumerate(membres_avec_tel):
-            num_wa = nettoyer_numero(m["tel"])
-            lien_wa = f"https://wa.me/{num_wa}?text={texte_encode}"
-            col_target = col_m1 if i % 2 == 0 else col_m2
+        if membres_selectionnes:
+            numeros_selectionnes = ", ".join([f"+{nettoyer_numero(m['tel'])}" for m in membres_selectionnes])
             
-            with col_target:
-                col_target.markdown(
-                    f'''
-                    <div style="background-color: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 6px; margin-bottom: 8px;">
-                        <b>{m['nom']}</b> ({m['tel']})<br/>
-                        <a href="{lien_wa}" target="_blank" style="background-color: #25D366; color: white; padding: 4px 10px; text-decoration: none; border-radius: 4px; font-size: 13px; font-weight: bold;">📲 Envoyer sur WhatsApp</a>
-                    </div>
-                    ''', 
-                    unsafe_allow_html=True
-                )
+            st.success(f"🎯 **{len(membres_selectionnes)} membre(s) coché(s)**")
+            st.write("📋 **Liste des numéros des membres cochés (pour Liste de Diffusion WhatsApp) :**")
+            st.code(numeros_selectionnes, language="text")
+            
+            st.info("💡 **Mode d'emploi pour envoyer à tous les cohés à la fois :** Copiez la liste de numéros ci-dessus. Sur votre téléphone, allez dans WhatsApp > **Nouvelle Diffusion**, collez la liste et envoyez votre message !")
+
+            st.divider()
+            st.subheader("🔗 Liens d'envoi rapide pour les membres cochés :")
+            texte_encode = urllib.parse.quote(message_personnalise)
+
+            col_m1, col_m2 = st.columns(2)
+            for i, m in enumerate(membres_selectionnes):
+                num_wa = nettoyer_numero(m["tel"])
+                lien_wa = f"https://wa.me/{num_wa}?text={texte_encode}"
+                col_target = col_m1 if i % 2 == 0 else col_m2
+                
+                with col_target:
+                    col_target.markdown(
+                        f'''
+                        <div style="background-color: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+                            <b>{m['nom']}</b><br/>
+                            <a href="{lien_wa}" target="_blank" style="background-color: #25D366; color: white; padding: 4px 10px; text-decoration: none; border-radius: 4px; font-size: 13px; font-weight: bold;">📲 Envoyer sur WhatsApp</a>
+                        </div>
+                        ''', 
+                        unsafe_allow_html=True
+                    )
+        else:
+            st.warning("Veuillez cocher au moins un membre.")
     else:
         st.warning("Aucun membre n'a de numéro valide renseigné.")
 
