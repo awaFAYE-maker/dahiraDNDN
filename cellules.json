@@ -1,142 +1,57 @@
 {
   "Section Dakar": {
-    "Commission Administrative": [
-      {
-        "nom": "Cherif Gning",
-        "tel": "76 027 59 36"
-      },
-      {
-        "nom": "Aliou Sène",
-        "tel": "75 529 16 78"
-      },
-      {
-        "nom": "Daouda Ngom",
-        "tel": "78 221 45 69"
-      },
-      {
-        "nom": "Adama Sène",
-        "tel": "78 333 71 00"
-      },
-      {
-        "nom": "Saliou Faye",
-        "tel": "70 521 12 96"
-      },
-      {
-        "nom": "Mamadou Sène",
-        "tel": "76 139 51 75"
-      },
-      {
-        "nom": "Mouhamed Sonko",
-        "tel": "77 077 19 44"
-      },
-      {
-        "nom": "Coumba Ngom",
-        "tel": "76 596 44 78"
-      },
-      {
-        "nom": "Mary Faye",
-        "tel": "76 339 49 58"
-      }
+    "code_acces": "DAKAR_2026",
+    "Membres Simples": [
+      {"nom": "Diawriñ Ousseynou Faye", "tel": "768825540", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Saliou Gning", "tel": "761229780", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Chérif Gning", "tel": "760275936", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Ousseynou Gning", "tel": "700038103", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Moustapha Gning", "tel": "778597661", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Adama Sene", "tel": "N/A", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Daouda Ngom", "tel": "782214569", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Saliou Faye", "tel": "705211296", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Ousmane Dieng", "tel": "772046703", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Moussa Ngom", "tel": "N/A", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Saliou Tine", "tel": "779026791", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Assane Faye", "tel": "705591656", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Modou Sarr Dione", "tel": "763987453", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Alioune Sene", "tel": "755291678", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Mamadou Séne", "tel": "761395175", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Abdoulaye Sene", "tel": "771815022", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Ablaye Ndour Bayfall", "tel": "770403137", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Ibrahima Faye", "tel": "785629226", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Cheikh Ahmeth Tidiane Sonko", "tel": "770771944", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Cheikh Faye", "tel": "766051595", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Moussa Gning", "tel": "770841954", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Saliou Sene", "tel": "784061939", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Elhadji Modou Dione", "tel": "779478083", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Modou Tine", "tel": "773680272", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Daouda Sene", "tel": "785126815", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Mohameth Sarr", "tel": "781607962", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Yoro Faye", "tel": "786149358", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Ousseynou Gning", "tel": "774192300", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Khadim Sene", "tel": "764447397", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Moustapha Gning", "tel": "762357412", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Ibra Dione", "tel": "764381888", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Abdou Diouf", "tel": "779510627", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Mamadou Gning", "tel": "770370075", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Awa Faye", "tel": "774201453", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Coumba Ngom", "tel": "765964478", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Bineta Gning", "tel": "764534986", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Niania Gning", "tel": "765849391", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "S Astou Mbène Faye", "tel": "762078865", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Mareme Soda Tine", "tel": "779200585", "adresse": "N/A", "profession": "N/A"},
+      {"nom": "Amy Faye", "tel": "763201230", "adresse": "N/A", "profession": "N/A"}
     ],
-    "Commission Organisation / Zikrulah": [
-      {
-        "nom": "Saliou Tine",
-        "tel": "77 902 67 91"
-      },
-      {
-        "nom": "Assane Faye",
-        "tel": "70 559 16 56"
-      },
-      {
-        "nom": "Moussa Gning",
-        "tel": "77 084 19 54"
-      },
-      {
-        "nom": "Awa Ngom",
-        "tel": "77 056 49 00"
-      },
-      {
-        "nom": "Mame Diarra Kandji",
-        "tel": "77 691 68 66"
-      },
-      {
-        "nom": "Moussa Ngom",
-        "tel": "78 311 68 38"
-      },
-      {
-        "nom": "Elimane Tine",
-        "tel": "76 368 86 62"
-      },
-      {
-        "nom": "Mouhamed Faye",
-        "tel": "70 508 17 65"
-      },
-      {
-        "nom": "Gana Tine",
-        "tel": "70 679 60 24"
-      }
-    ],
-    "Commission Culturelle": [
-      {
-        "nom": "Ousseynou Gning",
-        "tel": "70 003 81 03"
-      },
-      {
-        "nom": "Saliou Gning",
-        "tel": "76 122 97 80"
-      },
-      {
-        "nom": "Ibrahima Faye",
-        "tel": "78 562 92 26"
-      },
-      {
-        "nom": "Awa Faye",
-        "tel": "76 420 14 53"
-      },
-      {
-        "nom": "Bineta Gning",
-        "tel": "76 453 49 86"
-      },
-      {
-        "nom": "Niania Gning",
-        "tel": "76 584 93 91"
-      }
-    ],
-    "Commission Finance": [],
-    "Membres Simples": [],
-    "Cotisations": [
-      {
-        "membre": "Aliou Sène",
-        "mois": "Juillet",
-        "montant": 500.0,
-        "date": "21/07/2026 à 20:37"
-      },
-      {
-        "membre": "Coumba Ngom",
-        "mois": "Juillet",
-        "montant": 500.0,
-        "date": "21/07/2026 à 23:28"
-      },
-      {
-        "membre": "Awa Ngom",
-        "mois": "Juillet",
-        "montant": 500.0,
-        "date": "22/07/2026 à 14:46"
-      }
-    ]
-  },
-  "Section Thiès": {
-    "Commission Administrative": [],
-    "Commission Organisation / Zikrulah": [],
-    "Commission Culturelle": [],
-    "Commission Finance": [],
-    "Membres Simples": [],
-    "Cotisations": []
-  },
-  "Section Bambey": {
+    "Cotisations": [],
+    "Evenements": ["Mensualité", "Ziar", "Ndogou"],
     "Commission Administrative": [],
     "Commission Organisation / Zikrulah": [],
     "Commission Culturelle": [],
     "Commission Finance": []
-  }
+  },
+  "Section Saint-Louis": {"code_acces": "STL_2026", "Membres Simples": [], "Cotisations": [], "Evenements": ["Mensualité", "Ziar", "Ndogou"]},
+  "Section Ngoundiane": {"code_acces": "NGOUNDIANE_2026", "Membres Simples": [], "Cotisations": [], "Evenements": ["Mensualité", "Ziar", "Ndogou"]},
+  "Section Thiès": {"code_acces": "THIES_2026", "Membres Simples": [], "Cotisations": [], "Evenements": ["Mensualité", "Ziar", "Ndogou"]},
+  "Section Bambey": {"code_acces": "BAMBEY_2026", "Membres Simples": [], "Cotisations": [], "Evenements": ["Mensualité", "Ziar", "Ndogou"]}
 }
